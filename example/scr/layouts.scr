@@ -1,0 +1,22 @@
+func standard() {
+    place_print(<0,0>, <50,0>);
+
+    // setup map area to show
+    // coord p = location_of(glob.player);
+    // show_map(<p.x-25,p.y-25>, <p.x+24, p.y+24>);
+    place_map(<0,1>, <50,51>);
+
+    stats();
+}
+
+func inventory() {
+    for x in player.inv {
+        text_line(x);
+    }
+}
+
+func stats() {
+    text stat = player.name + " HP: " + player.hp + "/" + player.maxhp;
+
+    text_line(<0,52>, <50,52>, stat);
+}

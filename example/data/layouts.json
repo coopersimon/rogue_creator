@@ -1,0 +1,10 @@
+{
+    "name": "standard",
+    "inputs": "inputs/standard.json",
+    "render": "scr/render.scr:standard()"
+},
+{
+    "name": "inventory",
+    "inputs": "inputs/inventory.json",
+    "render": "scr/render.scr:inventory()"
+}

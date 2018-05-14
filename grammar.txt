@@ -1,0 +1,73 @@
+Script grammar:
+
+entry_snippet   : stat
+
+entry_file      : func_decl func_list
+                | func_decl
+
+func_decl       : Function Id LPar id_list RPar scope
+                | Function Id LPar RPar scope
+
+id_list         : Id Comma id_list
+                | Id
+
+scope           : LBrac stat_list RBrac
+                | LBrac RBrac
+
+stat_list       : stat stat_list
+                | stat
+
+stat            : scope
+                | decl
+                | assign_expr SemiCol
+                | if_stat
+                | for_stat
+                | while_stat
+                | return_stat
+
+decl            : Var Id SemiCol
+                | Var assign_expr SemiCol
+
+assign_expr     : Id Equal expr
+
+if_stat         : If LPar expr RPar scope
+                | If expr scope Else scope
+
+for_stat        : For LPar expr SemiCol expr SemiCol expr RPar scope
+                | For LPar Id In expr RPar scope
+
+while_stat      : While LPar expr RPar scope
+
+return_stat     : Return expr SemiCol
+                | Return SemiCol
+
+expr            : add_sub_expr
+
+add_sub_expr    : mul_div_expr Add add_sub_expr
+                | mul_div_expr Sub add_sub_expr
+                | mul_div_expr
+
+mul_div_expr    : func_expr Mul mul_div_expr
+                | func_expr Div mul_div_expr
+                | func_expr
+
+func_expr       : func_call
+                | prim_expr
+
+func_call       : Id LPar arg_list RPar
+                | Id LPar RPar
+
+arg_list        : expr Comma arg_list
+                | expr
+
+prim_expr       : id_chain
+                | list_expr
+                | Int
+                | Float
+                | Text
+
+id_chain        : Id Dot id_chain
+                | Id Arrow func_call
+                | Id
+
+list_expr       : LSq arg_list RSq

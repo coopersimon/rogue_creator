@@ -1,0 +1,26 @@
+{
+    "type": [
+        {
+            "name": "monster",
+
+            "exp": "integer",
+            "hp": "integer",
+            "att": "integer",
+            "def": "integer",
+            "wis": "integer",
+            "dex": "integer"
+        }
+    ],
+
+    "entity": [
+        {
+            "name": "goblin",
+            "id": 200,
+            "type": "monster",
+            "init": "scr/monster.scr:goblin_init()",
+            "action": "scr/monster.scr:monster_action()",
+            "delete": "scr/monster.scr:monster_delete()",
+            "key": "g"
+        }
+    ]
+}

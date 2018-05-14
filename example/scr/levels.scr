@@ -1,0 +1,34 @@
+func make_level() {
+    // as it is called from a level init function, we can use 'this'
+    // or maybe we should use 'level' to avoid confusion
+
+    // create map
+
+    // spawn in stairs
+    
+    // spawn in player
+
+    // spawn dynamic entities
+
+    // spawn static entities
+}
+
+func stairs(bool down) {
+    if (down == true) {
+        // see if level needs to be created
+        if (glob.current_level == glob.levels->len()) {
+            integer level_id = create_level("level_" + (glob.current_level + 1));
+            glob.levels->append(level_id);
+        }
+
+        store_level(glob.levels[glob.current_level-1]);
+        load_level(glob.levels[glob.current_level]);
+
+        glob.current_level += 1;
+    } else {
+        glob.current_level -= 1;
+
+        store_level(glob.levels[glob.current_level]);
+        load_level(glob.levels[glob.current_level-1]);
+    }
+}

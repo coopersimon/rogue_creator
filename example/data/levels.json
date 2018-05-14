@@ -1,0 +1,9 @@
+{
+    "name": "level_1",
+    "init": "scr/levels.scr:make_level()",
+    "delete": "scr/levels.scr:switch_level('level_2')",
+    "data": {
+        "entities": [200,201,202],
+        "statics": [301,302,401,402,500]
+    }
+}

@@ -1,0 +1,32 @@
+{
+    "version": "0.1",
+    "name": "rogue",
+
+    "init": ":scr/main.scr:init()",
+
+    "tick": ":scr/main.scr:tick()",
+
+    "end": ":scr/main.scr:end()",
+
+    "input": "scr/inputs.json",
+
+    "entities": [
+        "data/player.json",
+        "data/monsters.json",
+        "data/items.json"
+    ],
+
+    "layouts": [
+        "data/layouts.json"
+    ],
+
+    "levels": [
+        "data/levels.json"
+    ],
+
+    "global": {
+        "player": "entity(player)",
+        "levels": "list(integer)",
+        "current_level": "integer"
+    }
+}
