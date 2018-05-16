@@ -1,5 +1,9 @@
-mod script;
+#[macro_use]
+extern crate nom;
+
+pub mod script;
 //mod render;
+pub mod lib;
 
 fn main() {
     // load .hub.json file

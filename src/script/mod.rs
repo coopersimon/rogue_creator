@@ -1,6 +1,6 @@
-mod ast;
-mod runtime;
-
+pub mod ast;
+pub mod runtime;
+pub mod parser;
 
 
 // Script engine

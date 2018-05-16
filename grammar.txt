@@ -51,8 +51,14 @@ mul_div_expr    : func_expr Mul mul_div_expr
                 | func_expr Div mul_div_expr
                 | func_expr
 
-func_expr       : func_call
+func_expr       : ref_func_call
+                | core_func_call
                 | prim_expr
+
+ref_func_call   : Id DoubleColon func_call
+                | Colon Id Colon func_call
+
+core_func_call  : Id Arrow func_call
 
 func_call       : Id LPar arg_list RPar
                 | Id LPar RPar

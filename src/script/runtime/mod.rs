@@ -3,39 +3,57 @@ mod state;
 mod function;
 
 pub use self::state::*;
+pub use self::function::*;
 
 use std::collections::BTreeMap;
-use script::ast::expr::ExprSignal;
+use std::any::Any;
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum Value {
+    Int(i64),
+    Float(f64),
+    Str(String),
+    Bool(bool),
+    Null,
+    // List
+    // Object
+}
 
 // Runtime Signals
+#[derive(Clone, PartialEq, Debug)]
 pub enum Signal {
     Error(String),
+    Return(Value),
     Done,
+    //Continue
+    //Break
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum ExprSig {
+    Value(Value),
+    Error(String),
 }
 
 // Global state for extension packages
-pub type GlobState = BTreeMap<String, Box<ExtData>>;
+pub struct GlobState {
+    ext_data: BTreeMap<String, Box<ExtData>>,
+}
 
 impl GlobState {
     pub fn new() -> Self {
-        BTreeMap::new()
+        GlobState {
+            ext_data: BTreeMap::new(),
+        }
     }
 
     pub fn attach_data(&mut self, package_name: &str, data: Box<ExtData>) {
-        BTreeMap.insert(package_name.to_string(), data);
+        self.ext_data.insert(package_name.to_string(), data);
     }
 }
 
 pub trait ExtData {
     fn as_any(&mut self) -> &mut Any;
-    fn run(&str, &[Value], &mut GlobState) -> ExprSignal where Self: Sized;
-}
-
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Value {
-    Int(i64),
-    Float(f64),
-    Str(String),
-    // Null,
+    //fn run(&str, &[Value], &mut GlobState) -> ExprSig where Self: Sized;
+    fn call_ref() -> PackageRoot where Self: Sized;
 }
