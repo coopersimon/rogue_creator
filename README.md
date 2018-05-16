@@ -2,6 +2,8 @@
 
 Roguelike engine.
 
+Note that all of the below may not be 100% correct.
+
 ## JSON
 
 RC uses JSON files for config. RC uses a *.hub.json file to load the game.
@@ -37,6 +39,7 @@ RC is dynamically typed for in-script variables, however json declared variables
 * Coord: `<x,y>`
 * Float
 * Text
+* Bool
 * List(type)
 * Entity
 * Level (?)
@@ -50,7 +53,7 @@ List components can be accessed with `\[\]` square brackets. Entity components c
 
 #### Type functions
 
-Certain types have engine functions that can be called with the `->` operator. They are listed for each type below.
+Certain types have core functions that can be called with the `->` operator. They are listed for each type below.
 
 ##### Integer
 * `to_text()`: Returns as text. Implicitly called when added to a text variable.
@@ -66,6 +69,7 @@ Certain types have engine functions that can be called with the `->` operator. T
 * `ceiling()`: Rounds up and returns as integer.
 * `floor()`: Rounds down and returns as integer.
 * `round()`: Rounds up if fractional part is >= 0.5, rounds down otherwise, and returns as integer.
+* `is_nan()`: Returns true if number is NaN.
 
 ##### Text
 * `to_int()`: Returns as integer if possible. Crashes otherwise.
@@ -97,13 +101,16 @@ func function_name(argument_1, argument_2) {
 }
 ```
 
-Functions can be called from a different file by using the `:` specifier: `:path/to/file.scr:function_name();`. The file path is rooted at the location of the .hub.json file.
+Functions can be called from a different package by adding the following statement to the top of a file or function: `import package_name as id;`. Then, functions can be called as follows: `id::function_name()`. `package_name` can be an engine function, or a string which contains the file location, e.g. `"path/to/file.scr"`. The file path is rooted at the location of the .hub.json file.
 
-There are a number of engine functions which can be called. The `glob` keyword can be optionally used as a specifier to access global functions.
+Alternatively, they can be called from an engine package by using the `:` specifier: `:lib_name:function_name();`.
+
+There are a number of engine functions which can be called. They exist in different packages which must be `import`ed.
 
 #### Engine functions
+Each of the following functions are found inside the package noted. They must be imported before use.
 
-##### Entity manipulation
+##### Entity manipulation: entity
 * `create_dynamic(integer)`: Creates new "id" instance of entity. Runs its `init` script. Returns a handle to access the instance with. Adds instance to the level's dynamic instance list.
 * `create_static(integer)`: As above, but does not add to the dynamic instance list.
 * `delete(entity)`: Despawns instance (if spawned), runs its 'delete' script, and then removes altogether. If it was dynamic, it is removed from the dynamic instance list.
@@ -113,8 +120,12 @@ There are a number of engine functions which can be called. The `glob` keyword c
 * `instance_at(coord)`: Returns instance if one exists at coords specified. Returns null if nothing is at those coords.
 * `run_dynamic_actions()`: Runs action script for all instances in dynamic instance list.
 
-##### Layout
+##### Layout: textrender
 * `layout(text)`: Changes active layout to "text", as defined in json. This MUST be called before the end of the `start` script.
+
+* `print(text)`: Adds text to the print buffer, which can be displayed on screen. If the text is longer than the display length, it is split into multiple entries.
+* `next_print()`: Shows the next entry in the print buffer.
+* `clear_print()`: Clears entire print buffer and blanks.
 
 The following can only be found in the `render` function (or sub-functions):
 * `place_print(coord, coord)`: Places print between screen coords specified. Also determines current size of print buffer.
@@ -124,26 +135,28 @@ The following can only be found in the `render` function (or sub-functions):
 
 More (to do with colouring text, centering text etc) will be coming soon.
 
-##### Level
+##### Level: level
 * `create_level(text)`: Creates level of name "text". Returns integer id to refer to the level with.
 * `delete_level(integer)`: Deletes level of id "integer", if it exists.
 * `load_level(integer)`: Makes the active level id "integer". Uses it to render the map, etc.
 * `clone_level(integer)`: Clones the level id "integer", and returns a new id to refer to the new level with.
 
-##### Flow control
+##### Flow control: control
 * `tick()`: Run the tick script, as specified in the hub file.
 * `await_input()`: Waits for a single input. Returns "text" containing the key inputted.
 * `set_input(text)`: Sets input to file specified in "text".
 
-##### Misc
-* `print(text)`: Adds text to the print buffer, which can be displayed on screen. If the text is longer than the display length, it is split into multiple entries.
-* `next_print()`: Shows the next entry in the print buffer.
-* `clear_print()`: Clears entire print buffer and blanks.
-
 * `wait(integer)`: Waits "integer" milliseconds.
-
-* `rand(integer, integer)`: Returns an integer in the range specified (inclusively).
 
 * `exit()`: Exits script execution engine and returns to last JSON call.
 
 * `end_game()`: Runs 'end' script. Once 'end' script returns, the game ends and engine closes.
+
+##### Mathematical: math
+* `sin(n)`: Runs sin function on number.
+* `cos(n)`: Runs cos function on number.
+* `pow(b,e)`: Returns b raised to the power of e.
+* `sqrt(n)`: Returns square root of number.
+
+##### Misc: (math?)
+* `rand(integer, integer)`: Returns an integer in the range specified (inclusively).
