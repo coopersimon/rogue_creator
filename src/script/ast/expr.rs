@@ -30,6 +30,60 @@ pub struct DivExpr {
     right: Box<Expr>,
 }
 
+pub struct ModExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+}
+
+pub struct EqExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+}
+
+pub struct TrueEqExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+}
+
+pub struct GThanExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+}
+
+pub struct GEqExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+}
+
+pub struct LThanExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+}
+
+pub struct LEqExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+}
+
+pub struct NotExpr {
+    right: Box<Expr>,
+}
+
+pub struct AndExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+}
+
+pub struct OrExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+}
+
+pub struct XorExpr {
+    left: Box<Expr>,
+    right: Box<Expr>,
+}
+
 pub struct FuncCall {
     package: String,
     name: String,
@@ -101,6 +155,10 @@ impl Expr for AddExpr {
             (Value::Str(x),Value::Int(y)) => ExprSig::Value(Value::Str(x + &y.to_string())),
             (Value::Str(x),Value::Float(y)) => ExprSig::Value(Value::Str(x + &y.to_string())),
             (Value::Str(x),Value::Str(y)) => ExprSig::Value(Value::Str(x + &y)),
+            (Value::Str(x),Value::Bool(true)) => ExprSig::Value(Value::Str(x + "true")),
+            (Value::Str(x),Value::Bool(false)) => ExprSig::Value(Value::Str(x + "false")),
+            (Value::Bool(true),Value::Str(y)) => ExprSig::Value(Value::Str("true".to_string() + &y)),
+            (Value::Bool(false),Value::Str(y)) => ExprSig::Value(Value::Str("false".to_string() + &y)),
             (_,_) => ExprSig::Error("Addition type error.".to_string()),
         }
     }
@@ -218,6 +276,426 @@ impl Expr for DivExpr {
             (Value::Float(x),Value::Int(y)) => ExprSig::Value(Value::Float(x / y as f64)),
             (Value::Float(x),Value::Float(y)) => ExprSig::Value(Value::Float(x / y)),
             (_,_) => ExprSig::Error("Division type error.".to_string()),
+        }
+    }
+}
+
+
+impl ModExpr {
+    pub fn new(l: Box<Expr>, r: Box<Expr>) -> Self {
+        ModExpr {
+            left: l,
+            right: r,
+        }
+    }
+}
+
+impl AstNode for ModExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for ModExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.left.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        let b = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match (a,b) {
+            (Value::Int(x),Value::Int(y)) => ExprSig::Value(Value::Int(x % y)),
+            (_,_) => ExprSig::Error("Modulus type error.".to_string()),
+        }
+    }
+}
+
+
+impl EqExpr {
+    pub fn new(l: Box<Expr>, r: Box<Expr>) -> Self {
+        EqExpr {
+            left: l,
+            right: r,
+        }
+    }
+}
+
+impl AstNode for EqExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for EqExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.left.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        let b = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match (a,b) {
+            (Value::Int(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x == y)),
+            (Value::Int(x),Value::Float(y)) => ExprSig::Value(Value::Bool(x == (y as i64))),
+            (Value::Int(x),Value::Str(y)) => ExprSig::Value(Value::Bool(x.to_string() == y)),
+            (Value::Int(0),Value::Bool(true)) => ExprSig::Value(Value::Bool(false)),
+            (Value::Int(0),Value::Bool(false)) => ExprSig::Value(Value::Bool(true)),
+            (Value::Int(_),Value::Bool(true)) => ExprSig::Value(Value::Bool(true)),
+            (Value::Int(_),Value::Bool(false)) => ExprSig::Value(Value::Bool(false)),
+            (Value::Float(x),Value::Int(y)) => ExprSig::Value(Value::Bool((x as i64) == y)),
+            (Value::Float(x),Value::Float(y)) => ExprSig::Value(Value::Bool(x == y)),
+            (Value::Float(x),Value::Str(y)) => ExprSig::Value(Value::Bool(x.to_string() == y)),
+            (Value::Str(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x == y.to_string())),
+            (Value::Str(x),Value::Float(y)) => ExprSig::Value(Value::Bool(x == y.to_string())),
+            (Value::Str(x),Value::Str(y)) => ExprSig::Value(Value::Bool(x == y)),
+            (Value::Str(x),Value::Bool(true)) => ExprSig::Value(Value::Bool(x == "true")),
+            (Value::Str(x),Value::Bool(false)) => ExprSig::Value(Value::Bool(x == "false")),
+            (Value::Bool(true),Value::Int(0)) => ExprSig::Value(Value::Bool(false)),
+            (Value::Bool(false),Value::Int(0)) => ExprSig::Value(Value::Bool(true)),
+            (Value::Bool(true),Value::Int(_)) => ExprSig::Value(Value::Bool(true)),
+            (Value::Bool(false),Value::Int(_)) => ExprSig::Value(Value::Bool(false)),
+            (Value::Bool(true),Value::Str(y)) => ExprSig::Value(Value::Bool("true" == y)),
+            (Value::Bool(false),Value::Str(y)) => ExprSig::Value(Value::Bool("false" == y)),
+            (Value::Bool(x),Value::Bool(y)) => ExprSig::Value(Value::Bool(x == y)),
+            (_,_) => ExprSig::Value(Value::Bool(false)),
+            //(_,_) => ExprSig::Error("Equality check type error.".to_string()),
+        }
+    }
+}
+
+
+impl TrueEqExpr {
+    pub fn new(l: Box<Expr>, r: Box<Expr>) -> Self {
+        TrueEqExpr {
+            left: l,
+            right: r,
+        }
+    }
+}
+
+impl AstNode for TrueEqExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for TrueEqExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.left.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        let b = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match (a,b) {
+            (Value::Int(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x == y)),
+            (Value::Float(x),Value::Float(y)) => ExprSig::Value(Value::Bool(x == y)),
+            (Value::Str(x),Value::Str(y)) => ExprSig::Value(Value::Bool(x == y)),
+            (Value::Bool(x),Value::Bool(y)) => ExprSig::Value(Value::Bool(x == y)),
+            (_,_) => ExprSig::Error("Equality check type error.".to_string()),
+        }
+    }
+}
+
+
+impl GThanExpr {
+    pub fn new(l: Box<Expr>, r: Box<Expr>) -> Self {
+        GThanExpr {
+            left: l,
+            right: r,
+        }
+    }
+}
+
+impl AstNode for GThanExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for GThanExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.left.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        let b = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match (a,b) {
+            (Value::Int(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x > y)),
+            (Value::Int(x),Value::Float(y)) => ExprSig::Value(Value::Bool((x as f64) > y)),
+            (Value::Float(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x > (y as f64))),
+            (Value::Float(x),Value::Float(y)) => ExprSig::Value(Value::Bool(x > y)),
+            (_,_) => ExprSig::Error("Greater than type error.".to_string()),
+        }
+    }
+}
+
+
+impl GEqExpr {
+    pub fn new(l: Box<Expr>, r: Box<Expr>) -> Self {
+        GEqExpr {
+            left: l,
+            right: r,
+        }
+    }
+}
+
+impl AstNode for GEqExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for GEqExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.left.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        let b = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match (a,b) {
+            (Value::Int(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x >= y)),
+            (Value::Int(x),Value::Float(y)) => ExprSig::Value(Value::Bool((x as f64) >= y)),
+            (Value::Float(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x >= (y as f64))),
+            (Value::Float(x),Value::Float(y)) => ExprSig::Value(Value::Bool(x >= y)),
+            (_,_) => ExprSig::Error("Greater than or equal to type error.".to_string()),
+        }
+    }
+}
+
+
+impl LThanExpr {
+    pub fn new(l: Box<Expr>, r: Box<Expr>) -> Self {
+        LThanExpr {
+            left: l,
+            right: r,
+        }
+    }
+}
+
+impl AstNode for LThanExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for LThanExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.left.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        let b = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match (a,b) {
+            (Value::Int(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x < y)),
+            (Value::Int(x),Value::Float(y)) => ExprSig::Value(Value::Bool((x as f64) < y)),
+            (Value::Float(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x < (y as f64))),
+            (Value::Float(x),Value::Float(y)) => ExprSig::Value(Value::Bool(x < y)),
+            (_,_) => ExprSig::Error("Less than type error.".to_string()),
+        }
+    }
+}
+
+
+impl LEqExpr {
+    pub fn new(l: Box<Expr>, r: Box<Expr>) -> Self {
+        LEqExpr {
+            left: l,
+            right: r,
+        }
+    }
+}
+
+impl AstNode for LEqExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for LEqExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.left.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        let b = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match (a,b) {
+            (Value::Int(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x <= y)),
+            (Value::Int(x),Value::Float(y)) => ExprSig::Value(Value::Bool((x as f64) <= y)),
+            (Value::Float(x),Value::Int(y)) => ExprSig::Value(Value::Bool(x <= (y as f64))),
+            (Value::Float(x),Value::Float(y)) => ExprSig::Value(Value::Bool(x <= y)),
+            (_,_) => ExprSig::Error("Less than or equal to type error.".to_string()),
+        }
+    }
+}
+
+
+impl NotExpr {
+    pub fn new(e: Box<Expr>) -> Self {
+        NotExpr {
+            right: e,
+        }
+    }
+}
+
+impl AstNode for NotExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for NotExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match a {
+            Value::Int(x) => ExprSig::Value(Value::Int(!x)),
+            Value::Bool(x) => ExprSig::Value(Value::Bool(!x)),
+            _ => ExprSig::Error("Not type error.".to_string()),
+        }
+    }
+}
+
+
+impl AndExpr {
+    pub fn new(l: Box<Expr>, r: Box<Expr>) -> Self {
+        AndExpr {
+            left: l,
+            right: r,
+        }
+    }
+}
+
+impl AstNode for AndExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for AndExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.left.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        let b = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match (a,b) {
+            (Value::Int(x),Value::Int(y)) => ExprSig::Value(Value::Int(x & y)),
+            (Value::Bool(x),Value::Bool(y)) => ExprSig::Value(Value::Bool(x && y)),
+            (_,_) => ExprSig::Error("AND type error.".to_string()),
+        }
+    }
+}
+
+
+impl OrExpr {
+    pub fn new(l: Box<Expr>, r: Box<Expr>) -> Self {
+        OrExpr {
+            left: l,
+            right: r,
+        }
+    }
+}
+
+impl AstNode for OrExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for OrExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.left.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        let b = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match (a,b) {
+            (Value::Int(x),Value::Int(y)) => ExprSig::Value(Value::Int(x | y)),
+            (Value::Bool(x),Value::Bool(y)) => ExprSig::Value(Value::Bool(x || y)),
+            (_,_) => ExprSig::Error("OR type error.".to_string()),
+        }
+    }
+}
+
+
+impl XorExpr {
+    pub fn new(l: Box<Expr>, r: Box<Expr>) -> Self {
+        XorExpr {
+            left: l,
+            right: r,
+        }
+    }
+}
+
+impl AstNode for XorExpr {
+    fn print(&self) -> String {
+        "Val".to_string()
+    }
+}
+
+impl Expr for XorExpr {
+    fn eval(&self, state: &mut Scope, g: &mut GlobState, f: &FuncMap) -> ExprSig {
+        let a = match self.left.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        let b = match self.right.eval(state, g, f) {
+            ExprSig::Value(v) => v,
+            e => return e,
+        };
+
+        match (a,b) {
+            (Value::Int(x),Value::Int(y)) => ExprSig::Value(Value::Int(x ^ y)),
+            (Value::Bool(x),Value::Bool(y)) => ExprSig::Value(Value::Bool(if x == y {false} else {true})),
+            (_,_) => ExprSig::Error("AND type error.".to_string()),
         }
     }
 }

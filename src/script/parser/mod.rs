@@ -6,7 +6,7 @@ use script::runtime::Value;
 use self::resolver::Resolver;
 
 use nom::IResult;
-use nom::{multispace, alpha, alphanumeric, double, digit};
+use nom::{multispace, alpha, alphanumeric, double, digit, is_alphanumeric};
 
 use std::str;
 use std::cell::RefCell;
@@ -90,23 +90,29 @@ named!(p_func_list<&[u8], Vec<(String, FuncRoot)> >,
 
 named!(p_func<&[u8], (String, FuncRoot)>,
     do_parse!(
-        tag!(FUNC)          >>
-        multispace          >>
-        name: p_id          >>
-        opt!(multispace)    >>
-        tag!("(")           >>
-        opt!(multispace)    >>
-        args: p_id_list     >>
-        opt!(multispace)    >>
-        tag!(")")           >>
-        opt!(multispace)    >>
-        body: p_func_body   >>
+        tag!(FUNC)              >>
+        multispace              >>
+        name: p_id              >>
+        opt!(multispace)        >>
+        tag!("(")               >>
+        opt!(multispace)        >>
+        args: opt!(p_id_list)   >>
+        opt!(multispace)        >>
+        tag!(")")               >>
+        opt!(multispace)        >>
+        body: p_func_body       >>
         (name, FuncRoot::new(args, body))
     )
 );
 
 named!(p_id<&[u8], String>,
-    map_res!(alphanumeric, make_id)
+    map_res!(p_id_chars, make_id)
+);
+
+named!(p_id_chars<&[u8], &[u8]>,
+    take_while!(
+        |c| {is_alphanumeric(c) || (c == 0x5F)}
+    )
 );
 
 named!(p_id_list<&[u8], Vec<String> >,
@@ -119,9 +125,9 @@ named!(p_id_list<&[u8], Vec<String> >,
                 opt!(multispace)    >>
                 (arg)
             )
-        )                       >>
-        final_arg: opt!(p_id)   >>
-        (combine_list(args, final_arg))
+        )               >>
+        final_arg: p_id >>
+        (combine_list(args, Some(final_arg)))
     )
 );
 
@@ -159,10 +165,10 @@ named!(p_stat<&[u8], Box<Statement> >,
 
 named!(p_scope<&[u8], Box<Statement> >,
     do_parse!(
-        tag!("{")           >>
-        opt!(multispace)    >>
-        stats: p_stat_list  >>
-        tag!("}")           >>
+        tag!("{")                   >>
+        opt!(multispace)            >>
+        stats: opt!(p_stat_list)    >>
+        tag!("}")                   >>
         (Box::new(ScopeStat::new(stats)))
     )
 );
@@ -262,7 +268,157 @@ named!(p_assign_stat<&[u8], Box<Statement> >,
 
 named!(p_expr<&[u8], Box<Expr> >,
     alt!(
+        p_or
+    )
+);
+
+named!(p_or<&[u8], Box<Expr> >,
+    alt!(
+        do_parse!(
+            a: p_xor            >>
+            opt!(multispace)    >>
+            tag!("|")           >>
+            opt!(multispace)    >>
+            b: p_or             >>
+            (Box::new(OrExpr::new(a, b)) as Box<Expr>)
+        )   |
+        p_xor
+    )
+);
+
+named!(p_xor<&[u8], Box<Expr> >,
+    alt!(
+        do_parse!(
+            a: p_and            >>
+            opt!(multispace)    >>
+            tag!("^")           >>
+            opt!(multispace)    >>
+            b: p_xor            >>
+            (Box::new(XorExpr::new(a, b)) as Box<Expr>)
+        )   |
+        p_and
+    )
+);
+
+named!(p_and<&[u8], Box<Expr> >,
+    alt!(
+        do_parse!(
+            a: p_equals         >>
+            opt!(multispace)    >>
+            tag!("&")           >>
+            opt!(multispace)    >>
+            b: p_and            >>
+            (Box::new(AndExpr::new(a, b)) as Box<Expr>)
+        )   |
+        p_equals
+    )
+);
+
+named!(p_equals<&[u8], Box<Expr> >,
+    alt!(
+        p_eq        |
+        p_neq       |
+        p_true_eq   |
+        p_true_neq  |
+        p_relational
+    )
+);
+
+named!(p_eq<&[u8], Box<Expr> >,
+    do_parse!(
+        a: p_relational     >>
+        opt!(multispace)    >>
+        tag!("==")          >>
+        opt!(multispace)    >>
+        b: p_equals         >>
+        (Box::new(EqExpr::new(a, b)))
+    )
+);
+
+named!(p_neq<&[u8], Box<Expr> >,
+    do_parse!(
+        a: p_relational     >>
+        opt!(multispace)    >>
+        tag!("!=")          >>
+        opt!(multispace)    >>
+        b: p_equals         >>
+        (Box::new(NotExpr::new(Box::new(EqExpr::new(a, b)))))
+    )
+);
+
+named!(p_true_eq<&[u8], Box<Expr> >,
+    do_parse!(
+        a: p_relational     >>
+        opt!(multispace)    >>
+        tag!("===")         >>
+        opt!(multispace)    >>
+        b: p_equals         >>
+        (Box::new(TrueEqExpr::new(a, b)))
+    )
+);
+
+named!(p_true_neq<&[u8], Box<Expr> >,
+    do_parse!(
+        a: p_relational     >>
+        opt!(multispace)    >>
+        tag!("!==")         >>
+        opt!(multispace)    >>
+        b: p_equals         >>
+        (Box::new(NotExpr::new(Box::new(TrueEqExpr::new(a, b)))))
+    )
+);
+
+named!(p_relational<&[u8], Box<Expr> >,
+    alt!(
+        p_gthan |
+        p_geq   |
+        p_lthan |
+        p_leq   |
         p_add_sub
+    )
+);
+
+named!(p_gthan<&[u8], Box<Expr> >,
+    do_parse!(
+        a: p_add_sub        >>
+        opt!(multispace)    >>
+        tag!(">")           >>
+        opt!(multispace)    >>
+        b: p_relational     >>
+        (Box::new(GThanExpr::new(a, b)))
+    )
+);
+
+named!(p_geq<&[u8], Box<Expr> >,
+    do_parse!(
+        a: p_add_sub        >>
+        opt!(multispace)    >>
+        tag!(">=")          >>
+        opt!(multispace)    >>
+        b: p_relational     >>
+        (Box::new(GEqExpr::new(a, b)))
+    )
+);
+
+named!(p_lthan<&[u8], Box<Expr> >,
+    do_parse!(
+        a: p_add_sub        >>
+        opt!(multispace)    >>
+        tag!("<")           >>
+        opt!(multispace)    >>
+        b: p_relational     >>
+        (Box::new(LThanExpr::new(a, b)))
+    )
+);
+
+named!(p_leq<&[u8], Box<Expr> >,
+    do_parse!(
+        a: p_add_sub        >>
+        opt!(multispace)    >>
+        tag!("<=")          >>
+        opt!(multispace)    >>
+        b: p_relational     >>
+        (Box::new(LEqExpr::new(a, b)))
     )
 );
 
@@ -300,6 +456,7 @@ named!(p_mul_div<&[u8], Box<Expr> >,
     alt!(
         p_mul   |
         p_div   |
+        p_mod   |
         p_func_expr
     )
 );
@@ -326,8 +483,20 @@ named!(p_div<&[u8], Box<Expr> >,
     )
 );
 
+named!(p_mod<&[u8], Box<Expr> >,
+    do_parse!(
+        a: p_func_expr      >>
+        opt!(multispace)    >>
+        tag!("%")           >>
+        opt!(multispace)    >>
+        b: p_mul_div        >>
+        (Box::new(ModExpr::new(a, b)))
+    )
+);
+
 named!(p_func_expr<&[u8], Box<Expr> >,
     alt!(
+        p_not       |
         p_func_call |
         p_prim_expr
     )
@@ -342,6 +511,15 @@ named!(p_func_call<&[u8], Box<Expr> >,
         opt!(multispace)        >>
         tag!(")")               >>
         (Box::new(FuncCall::new(&get_package_ref(None), &f, args)))
+    )
+);
+
+named!(p_not<&[u8], Box<Expr> >,
+    do_parse!(
+        tag!("!")           >>
+        opt!(multispace)    >>
+        e: p_prim_expr      >>
+        (Box::new(NotExpr::new(e)))
     )
 );
 
@@ -429,8 +607,8 @@ named!(p_expr_list<&[u8], Vec<Box<Expr> > >,
                 (e)
             )
         )                           >>
-        final_expr: opt!(p_expr)    >>
-        (combine_list(exprs, final_expr))
+        final_expr: p_expr          >>
+        (combine_list(exprs, Some(final_expr)))
     )
 );
 
@@ -587,6 +765,82 @@ mod tests {
     }
 
     #[test]
+    fn parse_func_with_precedence() {
+        let func = "func f() {return 3+2*5;}";
+        let package_name = "root";
+
+        let package = parse_package(package_name, func);
+
+        let mut g = GlobState::new();
+        let mut fm = FuncMap::new();
+
+        fm.attach_package(package_name, package.call_ref());
+
+        assert_eq!(fm.call_fn("root",
+                              "f",
+                              &Vec::new(),
+                              &mut g),
+                   ExprSig::Value(Value::Int(13)));
+    }
+
+    #[test]
+    fn parse_func_with_logical_ops() {
+        let func = "func f() {return true & false;}";
+        let package_name = "root";
+
+        let package = parse_package(package_name, func);
+
+        let mut g = GlobState::new();
+        let mut fm = FuncMap::new();
+
+        fm.attach_package(package_name, package.call_ref());
+
+        assert_eq!(fm.call_fn("root",
+                              "f",
+                              &Vec::new(),
+                              &mut g),
+                   ExprSig::Value(Value::Bool(false)));
+    }
+
+    #[test]
+    fn parse_func_with_logical_precedence() {
+        let func = "func f() {return true | false & true;}";
+        let package_name = "root";
+
+        let package = parse_package(package_name, func);
+
+        let mut g = GlobState::new();
+        let mut fm = FuncMap::new();
+
+        fm.attach_package(package_name, package.call_ref());
+
+        assert_eq!(fm.call_fn("root",
+                              "f",
+                              &Vec::new(),
+                              &mut g),
+                   ExprSig::Value(Value::Bool(true)));
+    }
+
+    #[test]
+    fn parse_func_with_bitwise_ops() {
+        let func = "func f() {return 3 | 4;}";
+        let package_name = "root";
+
+        let package = parse_package(package_name, func);
+
+        let mut g = GlobState::new();
+        let mut fm = FuncMap::new();
+
+        fm.attach_package(package_name, package.call_ref());
+
+        assert_eq!(fm.call_fn("root",
+                              "f",
+                              &Vec::new(),
+                              &mut g),
+                   ExprSig::Value(Value::Int(7)));
+    }
+
+    #[test]
     fn parse_func_with_return_from_args() {
         let func = "func add(a,b) {return a+b;}";
         let package_name = "root";
@@ -647,7 +901,7 @@ mod tests {
     // func calls
     #[test]
     fn parse_funcs_with_func_call() {
-        let func = "func parent(x){return child(x) + x;} func child(x){return x*2;}";
+        let func = "func parent(x){return child(x+1) + x;} func child(x){return x*2;}";
         let package_name = "root";
 
         let package = parse_package(package_name, func);
@@ -661,7 +915,7 @@ mod tests {
                               "parent",
                               &vec![Value::Int(3)],
                               &mut g),
-                   ExprSig::Value(Value::Int(9)));
+                   ExprSig::Value(Value::Int(11)));
     }
 
     // if test
@@ -683,11 +937,10 @@ mod tests {
                               &mut g),
                    ExprSig::Value(Value::Bool(true)));
     }
-
-    // recurisve
+    
     #[test]
-    fn parse_recursive_func() {
-        let func = "func fact(x) { if x return fact(x-1)*x; return 1; }";
+    fn parse_func_with_bool_if() {
+        let func = "func gthan(x,y){ if x > y return true; return false; }";
         let package_name = "root";
 
         let package = parse_package(package_name, func);
@@ -698,10 +951,32 @@ mod tests {
         fm.attach_package(package_name, package.call_ref());
 
         assert_eq!(fm.call_fn("root",
-                              "fact",
-                              &vec![Value::Int(5)],
+                              "gthan",
+                              &vec![Value::Int(5), Value::Float(3.3)],
                               &mut g),
-                   ExprSig::Value(Value::Int(120)));
+                   ExprSig::Value(Value::Bool(true)));
+    }
+
+    // recursive
+    #[test]
+    fn parse_recursive_func() {
+        //let func = "func fact(x) { if x > 1 return x*fact(x-1); return 1;}";
+        let func = "func even_or(x) {if (x % 2 == 1) {return x;} return even_or(x + 1); }";
+        //let func = "func even_or(x){if (x % 2 == 1) return x; return x+1; }";
+        let package_name = "root";
+
+        let package = parse_package(package_name, func);
+
+        let mut g = GlobState::new();
+        let mut fm = FuncMap::new();
+
+        fm.attach_package(package_name, package.call_ref());
+
+        assert_eq!(fm.call_fn("root",
+                              "even_or",
+                              &vec![Value::Int(4)],
+                              &mut g),
+                   ExprSig::Value(Value::Int(5)));
     }
 
     // declaring and using variables

@@ -30,15 +30,22 @@ pub struct FuncRoot {
 }
 
 impl FuncRoot {
-    pub fn new(arg_names: Vec<String>, stat_list: Vec<Box<Statement>>) -> Self {
+    pub fn new(arg_names: Option<Vec<String>>, stat_list: Vec<Box<Statement>>) -> Self {
         FuncRoot {
-            arg_names: arg_names,
+            arg_names: match arg_names {
+                Some(v) => v,
+                None => Vec::new(),
+            },
             stat_list: stat_list,
         }
     }
 
     pub fn call(&self, args: &[Value], g: &mut GlobState, f: &FuncMap) -> ExprSig {
         let mut state = Scope::new();
+
+        if args.len() != self.arg_names.len() {
+            return ExprSig::Error("Incorrect number of arguments provided.".to_string());
+        }
 
         for (a,n) in args.iter().zip(self.arg_names.iter()) {
             state.new_var(&n, a.clone());
@@ -49,7 +56,7 @@ impl FuncRoot {
                 Signal::Done => {},
                 Signal::Error(e) => return ExprSig::Error(e),
                 Signal::Return(v) => return ExprSig::Value(v),
-                //Continue
+                //Continue => return ExprSig::Error(...),
                 //Break
             }
         }
