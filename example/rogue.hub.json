@@ -2,13 +2,19 @@
     "version": "0.1",
     "name": "rogue",
 
-    "init": ":scr/main.scr:init()",
+    "source": [
+        "scr/main.scr"
+    ],
 
-    "tick": ":scr/main.scr:tick()",
+    "imports": {
+        "scr/main.scr": "main"
+    },
 
-    "end": ":scr/main.scr:end()",
+    "init": "main::init()",
 
-    "input": "scr/inputs.json",
+    "tick": "main::tick()",
+
+    "end": "main::end()",
 
     "entities": [
         "data/player.json",
@@ -16,17 +22,11 @@
         "data/items.json"
     ],
 
-    "layouts": [
-        "data/layouts.json"
-    ],
-
     "levels": [
         "data/levels.json"
     ],
 
-    "global": {
-        "player": "entity(player)",
-        "levels": "list(integer)",
-        "current_level": "integer"
-    }
+    "layouts": [
+        "data/layouts.json"
+    ]
 }

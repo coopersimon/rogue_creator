@@ -1,10 +1,36 @@
 {
-    "name": "standard",
-    "inputs": "inputs/standard.json",
-    "render": "scr/render.scr:standard()"
-},
-{
-    "name": "inventory",
-    "inputs": "inputs/inventory.json",
-    "render": "scr/render.scr:inventory()"
+    "imports": {
+        "scr/render.scr": "r",
+        "scr/player_actions": "act"
+    },
+
+    "layouts": {
+        "standard": {
+            "inputs": {
+                "w": "act::move_up",
+                "a": "act::move_left",
+                "s": "act::move_down",
+                "d": "act::move_right",
+                "i": "act::change_layout('inventory')",
+                "n": "next_print",
+                "f": "act::change_layout('attack')"
+            },
+            "render": "r::standard()"
+        },
+
+        "attack": {
+            "inputs": {
+                "w": "act::attack('up')",
+                "a": "act::attack('left')",
+                "s": "act::attack('down')",
+                "d": "act::attack('right')"
+            },
+            "render": "r::standard()"
+        },
+
+        "inventory": {
+            //"inputs": "inputs/inventory.json",
+            "render": "r::inventory()"
+        }
+    }
 }

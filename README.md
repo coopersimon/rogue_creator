@@ -26,6 +26,22 @@ RC follows a predictable cycle:
 
 `tick` is often used to advance a cycle even when not in ticking mode.
 
+Render can be called at any point, for example if one wants to show text changing mid-tick.
+
+## Making Level:
+Tiles must be defined. The level map can be made from these tiles.
+
+Init the level, then create the map from the special functions (in `makemap`). Once the level tiles are placed, entites can be spawned in.
+
+Entities must be initialised, then they can be stored wherever. Most likely, the only persistent entity will be the player and whatever they are holding: store these persistent entities in the global object. When entities are spawned into a level they are stored inside the level too - along with their local coordinates. The level owns an entity's location, and a reference to the rest of the entity's data.
+
+Entities are spawned as active or static, which determines whether they are called in the `tick` command or not.
+
+Once everything is spawned into the level, input is awaited. Once input is put in, it is translated to an input command (i.e., the "up" arrow key is translated to "move_up").
+
+The input command calls a script which does some sort of action. This action may or may not call `tick` which will make all active entities take an action.
+
+
 ## Scripts
 
 RC extensively makes use of a proprietary scripting language (similar to JS).
@@ -36,7 +52,7 @@ Below a brief documentation can be found.
 
 RC is dynamically typed for in-script variables, however json declared variables are statically typed. The types that exist are:
 * Integer
-* Coord: `<x,y>`
+* Coord (pair): `<x,y>`
 * Float
 * Text
 * Bool
@@ -111,35 +127,48 @@ There are a number of engine functions which can be called. They exist in differ
 Each of the following functions are found inside the package noted. They must be imported before use.
 
 ##### Entity manipulation: entity
-* `create_dynamic(integer)`: Creates new "id" instance of entity. Runs its `init` script. Returns a handle to access the instance with. Adds instance to the level's dynamic instance list.
-* `create_static(integer)`: As above, but does not add to the dynamic instance list.
-* `delete(entity)`: Despawns instance (if spawned), runs its 'delete' script, and then removes altogether. If it was dynamic, it is removed from the dynamic instance list.
-* `spawn_entity(entity, coord)`: Spawns instance at coords specified. If not possible, then crashes.
-* `despawn_entity(entity)`: Despawns instance, however keeps data so it can be re-spawned.
-* `location_of(entity)`: Returns coord containing location of instance.
-* `instance_at(coord)`: Returns instance if one exists at coords specified. Returns null if nothing is at those coords.
-* `run_dynamic_actions()`: Runs action script for all instances in dynamic instance list.
+* `create_entity(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the level's instance list.
+* `delete(entity)`: Despawns instance (if spawned), runs its 'delete' script, and then removes altogether.
+* `run_actions()`: Runs pre, action and post scripts for all instances in level instance list.
 
-##### Layout: textrender
+##### Layout: render
+The following can only be found in the `render` function (or sub-functions):
+* `place_print(coord, coord)`: Places print between screen coords specified. Also determines current size of print buffer.
+* `map_display(coord, coord)`: Selects what to show with `place_map`. (defaults to the whole map from top left)
+* `place_map(coord, coord)`: Places level map at screen coords specified. Level MUST be LOADED before this is called.
+* `place_text(text, coord, coord)`: Places text between coords.
+
+More (to do with colouring text, centering text etc) will be coming soon.
+
+##### Layout and map display: layout
 * `layout(text)`: Changes active layout to "text", as defined in json. This MUST be called before the end of the `start` script.
 
 * `print(text)`: Adds text to the print buffer, which can be displayed on screen. If the text is longer than the display length, it is split into multiple entries.
 * `next_print()`: Shows the next entry in the print buffer.
 * `clear_print()`: Clears entire print buffer and blanks.
 
-The following can only be found in the `render` function (or sub-functions):
-* `place_print(coord, coord)`: Places print between screen coords specified. Also determines current size of print buffer.
-* `show_map(coord, coord)`: Selects what to show with `place_map`. (defaults to the whole map from top left)
-* `place_map(coord, coord)`: Places level map at screen coords specified. Level MUST be LOADED before this is called.
-* `place_text(text, coord, coord)`: Places text between coords.
+* `show_map()`: reveals entire map for rendering.
+* `hide_map()`: hides entire map so it isn't rendered.
+* `show_tiles(coord)`: reveals all connected tiles of the same type from coord (if possible).
+* `hide_tiles(coord)`: hides all connected tiles of the same type from coord (if possible).
+* `show_surround(coord)`: reveals the tiles around and including coord.
+* `hide_surround(coord)`: hides the tiles around and including coord.
 
-More (to do with colouring text, centering text etc) will be coming soon.
-
-##### Level: level
+##### Level interaction: level
 * `create_level(text)`: Creates level of name "text". Returns integer id to refer to the level with.
 * `delete_level(integer)`: Deletes level of id "integer", if it exists.
 * `load_level(integer)`: Makes the active level id "integer". Uses it to render the map, etc.
 * `clone_level(integer)`: Clones the level id "integer", and returns a new id to refer to the new level with.
+
+* `level_data()`: Gets a mutable reference to level data.
+* `instance_at(coord)`: Returns instance if one exists at coords specified. Returns null if nothing is at those coords.
+* `location_of(entity)`: Returns coord containing location of instance.
+
+##### Map creation: makemap
+* `fill_tile(string, coord, <coord>)`: Draw tiles between coords, or at first coord if second is not specified.
+* `draw_line(string, coord, coord)`: Draws a line between the coords.
+* `spawn_entity(entity, coord)`: Spawns instance at coords specified. If not possible, then returns false. If successful, returns true.
+* `despawn_entity(entity)`: Despawns instance, however keeps data so it can be re-spawned.
 
 ##### Flow control: control
 * `tick()`: Run the tick script, as specified in the hub file.
@@ -152,11 +181,13 @@ More (to do with colouring text, centering text etc) will be coming soon.
 
 * `end_game()`: Runs 'end' script. Once 'end' script returns, the game ends and engine closes.
 
+##### Global data access: global
+* `get()`: gets a mutable reference to the global object.
+* `data()`: gets a reference to the global data object.
+
 ##### Mathematical: math
 * `sin(n)`: Runs sin function on number.
 * `cos(n)`: Runs cos function on number.
 * `pow(b,e)`: Returns b raised to the power of e.
 * `sqrt(n)`: Returns square root of number.
-
-##### Misc: (math?)
 * `rand(integer, integer)`: Returns an integer in the range specified (inclusively).

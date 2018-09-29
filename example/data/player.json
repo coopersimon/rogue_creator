@@ -1,55 +1,49 @@
 {
-    "type": [
-        {
-            "name": "player",
-            
-            "called": "text",
+    "imports": {
+        "scr/player.scr": "p"
+    },
 
-            "exp": "integer",
-            "next_level": "integer",
-            "level": "integer",
-            "hp": "integer",
-            "maxhp": "integer",
-            "att": "integer",
-            "def": "integer",
-            "wis": "integer",
-            "dex": "integer",
+    "type": {
+        "player": [
+            "name",
+            "exp",
+            "next_level",
+            "level",
+            "hp",
+            "maxhp",
+            "att",
+            "def",
+            "wis",
+            "dex",
+            "weapon",
+            "armour",
+            "ring"
+        ]
+    },
 
-            "weapon": "entity(weapon)",
-            "armour": "entity(armour)",
-            "ring": "entity(ring)"
-        }
-    ],
-
-    "entity": [
-        {
-            "name": "warrior",
-            "id": 100,
+    "entities": {
+        "warrior": {
             "type": "player",
-            "init": "scr/player.scr:warrior_init()",
-            "pre_action": "{}",
-            "action": "{}",
-            "post_action": "scr/player.scr:warrior_post()",
-            "delete": "scr/player.scr:delete()",
+            "init": "p::warrior_init",
+            "pre_action": null,
+            "action": null,
+            "post_action": "p::warrior_post",
+            "delete": "p::delete",
             "key": "@"
         },
-        {
-            "name": "rogue",
-            "id": 101,
+        "rogue": {
             "type": "player",
-            "init": "scr/player.scr:rogue_init()",
-            "post_action": "scr/player.scr:rogue_post()",
-            "delete": "scr/player.scr:delete()",
+            "init": "p::rogue_init",
+            "post_action": "p::rogue_post",
+            "delete": "p::delete",
             "key": "@"
         },
-        {
-            "name": "mage",
-            "id": 102,
+        "mage": {
             "type": "player",
-            "init": "scr/player.scr:mage_init()",
-            "post_action": "scr/player.scr:mage_post()",
-            "delete": "scr/player.scr:delete()",
+            "init": "p::mage_init",
+            "post_action": "p::mage_post",
+            "delete": "p::delete",
             "key": "@"
         }
-    ]
+    }
 }

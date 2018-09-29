@@ -1,9 +1,35 @@
 {
-    "name": "level_1",
-    "init": "scr/levels.scr:make_level()",
-    "delete": "scr/levels.scr:switch_level('level_2')",
-    "data": {
-        "entities": [200,201,202],
-        "statics": [301,302,401,402,500]
+    "imports": {
+        "scr/levels.scr": "l"
+    },
+
+    "tiles": {
+        "default": " ",
+        "collide": [
+            " ",
+            "\u23AF",
+            "\u23B8",
+            "\u23BE",
+            "\u23BF",
+            "\u23CB",
+            "\u23CC"
+        ],
+        "nocollide": [
+            ".",
+            "#"
+        ]
+    },
+
+    "levels": {
+        "level_1": {
+            "x": 48,
+            "y": 48,
+            "init": "l::make_level()",
+            "delete": "l::switch_level('level_2')",
+            "data": {
+                "entities": [200,201,202],
+                "statics": [301,302,401,402,500]
+            }
+        }
     }
 }

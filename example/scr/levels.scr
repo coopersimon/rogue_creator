@@ -2,9 +2,17 @@ func make_level() {
     // as it is called from a level init function, we can use 'this'
     // or maybe we should use 'level' to avoid confusion
 
+    var x_size = 48;
+    var y_size = 48;
+
     // create map
+    for i in [0..9] {
+        // create segments
+    }
+    // link segments
 
     // spawn in stairs
+    spawn_entity("stairs"
     
     // spawn in player
 
