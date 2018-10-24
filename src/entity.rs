@@ -1,4 +1,4 @@
-use modscript::{Callable, Value, FuncMap, ExprRes};
+use modscript::{Callable, Value, FuncMap, ExprRes, Error};
 
 use std::rc::Rc;
 
@@ -52,7 +52,7 @@ impl Entity {
 }
 
 impl EntityInst {
-    pub fn new(entity: Rc<Entity>, id: u64) -> Result<Self, String> {
+    pub fn new(entity: Rc<Entity>, id: u64) -> Result<Self, Error> {
         let fields = entity.init.call(&entity.source, &[])?;
         Ok(EntityInst {
             entity: entity.clone(),
@@ -68,8 +68,7 @@ impl EntityInst {
 
     pub fn call_action(&mut self) -> ExprRes {
         // TODO: pass output of pre into action
-        // TODO: note this requires "callable" to accept arguments (done)
-        // TODO: this also might require allowing functions to accept variable amounts of arguments (modscript change)
+        // TODO: this might require allowing functions to accept variable amounts of arguments (modscript change)
         self.entity.pre_action.call(&self.entity.source, &[self.fields.clone()])?;
         self.entity.action.call(&self.entity.source, &[self.fields.clone()])?;
         self.entity.post_action.call(&self.entity.source, &[self.fields.clone()])

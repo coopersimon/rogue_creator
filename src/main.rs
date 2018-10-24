@@ -1,26 +1,27 @@
 extern crate modscript;
 extern crate serde_json;
+extern crate pancurses;
 
-//mod lib;
-//mod render;
+mod lib;
+mod textrender;
 mod global;
 mod entity;
 mod level;
+mod layout;
 
 use std::rc::Rc;
 use std::cell::RefCell;
-use std::collections::BTreeMap;
 
 pub type Coord = (usize, usize);
 
 fn main() {
     // init graphics, loading screen
 
-    let mut glob = Rc::new(RefCell::new(global::Global::new()));
+    let glob = Rc::new(RefCell::new(global::Global::new()));
 
-    // let libs = glob.borrow_mut().source.get_mut().unwrap();
-    
     // init libraries
+    Rc::get_mut(&mut glob.borrow_mut().source).unwrap().attach_package(lib::math::NAME, lib::math::call_ref());
+
 
     // TODO: get from arg
     let hub_file = "example/rogue.hub.json";

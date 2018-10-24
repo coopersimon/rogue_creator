@@ -6,7 +6,7 @@ Note that all of the below may not be 100% correct.
 
 ## JSON
 
-RC uses JSON files for config. RC uses a *.hub.json file to load the game.
+RC uses JSON files for config. RC uses a `*.hub.json` file to load the game.
 
 ## Engine Workings
 
@@ -47,6 +47,19 @@ The input command calls a script which does some sort of action. This action may
 RC extensively makes use of a proprietary scripting language (similar to JS).
 
 Below a brief documentation can be found.
+
+### String Object
+The string object can be used when visual formatting is desired. It is set up as below:
+{
+  text: String,
+  length: Int/Null,
+  colour: String/Null,
+  options: String/List(String)/Null
+}
+
+#### Colours
+
+#### Options
 
 ### Types
 

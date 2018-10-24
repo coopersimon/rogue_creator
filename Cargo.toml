@@ -7,3 +7,4 @@ authors = ["coopersimon <simon.d.cooper@hotmail.co.uk>"]
 #modscript = {git = "https://github.com/coopersimon/modscript"}
 modscript = {path = "../modscript"}
 serde_json = "1.0"
+pancurses = "0.16.0"
