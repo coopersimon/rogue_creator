@@ -19,7 +19,7 @@ In addition to `glob`, `data`, and local variables inside functions, there is al
 If a script is triggered by an entity function (`init`, `action`, `delete`), `this` can be used to access the current entity. It will equal `null` otherwise.
 
 RC follows a predictable cycle:
-* When the game begins the 'start' script is called (specified in hub file). This will probably initialise the `glob` object. It MUST initialise a layout, and usually a level too.
+* When the game begins the 'init' script is called (specified in hub file). This will probably initialise the `glob` object. It MUST initialise a layout, and usually a level too.
 * Next, the `render` function is called (defined by the current layout).
 * Next, if in ticking mode, the `tick` function will be called, then input will be awaited for a short time (depending on frame-rate). If in normal mode, input will be awaited depending on the input specified in the layout.
 * When either script returns, render is re-called.
@@ -147,14 +147,13 @@ Each of the following functions are found inside the package noted. They must be
 ##### Layout: render
 The following can only be found in the `render` function (or sub-functions):
 * `place_print(coord, coord)`: Places print between screen coords specified. Also determines current size of print buffer.
-* `map_display(coord, coord)`: Selects what to show with `place_map`. (defaults to the whole map from top left)
 * `place_map(coord, coord)`: Places level map at screen coords specified. Level MUST be LOADED before this is called.
 * `place_text(text, coord, coord)`: Places text between coords.
 
 More (to do with colouring text, centering text etc) will be coming soon.
 
 ##### Layout and map display: layout
-* `layout(text)`: Changes active layout to "text", as defined in json. This MUST be called before the end of the `start` script.
+* `layout(text)`: Changes active layout to "text", as defined in json. This MUST be called before the end of the `init` script.
 
 * `print(text)`: Adds text to the print buffer, which can be displayed on screen. If the text is longer than the display length, it is split into multiple entries.
 * `next_print()`: Shows the next entry in the print buffer.
@@ -162,6 +161,7 @@ More (to do with colouring text, centering text etc) will be coming soon.
 
 * `show_map()`: reveals entire map for rendering.
 * `hide_map()`: hides entire map so it isn't rendered.
+* `map_display(coord, coord)`: Selects what to show with `place_map`. (defaults to the whole map from top left)
 * `show_tiles(coord)`: reveals all connected tiles of the same type from coord (if possible).
 * `hide_tiles(coord)`: hides all connected tiles of the same type from coord (if possible).
 * `show_surround(coord)`: reveals the tiles around and including coord.
@@ -184,10 +184,6 @@ More (to do with colouring text, centering text etc) will be coming soon.
 * `despawn_entity(entity)`: Despawns instance, however keeps data so it can be re-spawned.
 
 ##### Flow control: control
-* `tick()`: Run the tick script, as specified in the hub file.
-* `await_input()`: Waits for a single input. Returns "text" containing the key inputted.
-* `set_input(text)`: Sets input to file specified in "text".
-
 * `wait(integer)`: Waits "integer" milliseconds.
 
 * `exit()`: Exits script execution engine and returns to last JSON call.

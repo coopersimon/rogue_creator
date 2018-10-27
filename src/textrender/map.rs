@@ -1,11 +1,10 @@
 use super::Render;
-use std::sync::mpsc::Receiver;
 use Coord;
 use pancurses::Window;
 
+use std::sync::mpsc::Receiver;
+
 pub enum MapCommand {
-    TopLeft(Coord),
-    BottomRight(Coord),
     DisplayTopLeft(Coord),
     DisplayBottomRight(Coord),
     MapData(Vec<Vec<char>>),
@@ -14,8 +13,6 @@ pub enum MapCommand {
 }
 
 pub struct Map {
-    top_left: Coord,
-    bottom_right: Coord,
     display_top_left: Coord,
     display_bottom_right: Coord,
     map_data: Vec<Vec<char>>,
@@ -24,10 +21,8 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn new(tl: Coord, br: Coord, recv: Receiver<MapCommand>) -> Self {
+    pub fn new(recv: Receiver<MapCommand>) -> Self {
         Map {
-            top_left: tl,
-            bottom_right: br,
             display_top_left: (0,0),
             display_bottom_right: (0,0),
             map_data: Vec::new(),
@@ -56,8 +51,6 @@ impl Map {
                         }
                     }
                 },
-                TopLeft(v)              => self.top_left = v,
-                BottomRight(v)          => self.bottom_right = v,
                 DisplayTopLeft(v)       => self.display_top_left = v,
                 DisplayBottomRight(v)   => self.display_bottom_right = v,
                 MapData(v)              => self.map_data = v,
@@ -67,9 +60,9 @@ impl Map {
 }
 
 impl Render for Map {
-    fn render(&mut self, w: &mut Window) {
+    fn render(&mut self, w: &mut Window, top_left: Coord, bottom_right: Coord) {
         self.process_commands();
-        let x_offset = self.display_top_left.0;
+        /*let x_offset = self.display_top_left.0;
         let y_offset = self.display_top_left.1;
 
         for y in self.display_top_left.1..self.display_bottom_right.1 {
@@ -81,6 +74,7 @@ impl Render for Map {
                 };
                 w.mvaddch((y - y_offset) as i32, (x - x_offset) as i32, c);
             }
-        }
+        }*/
+        //TODO: rewrite
     }
 }

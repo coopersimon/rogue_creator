@@ -7,19 +7,55 @@ mod textbox;
 mod map;
 mod printbox;
 
-use pancurses::Window;
 use Coord;
+use self::map::{Map, MapCommand};
+use self::printbox::{PrintBox, PrintCommand};
+
+use pancurses::Window;
+
+use std::sync::mpsc::Receiver;
 
 // Coords: 0,0 is top left.
 
 pub trait Render {
-    fn render(&mut self, w: &mut Window);
+    fn render(&mut self, w: &mut Window, top_left: Coord, bottom_right: Coord);
 }
 
-pub fn render(w: &mut Window, render_data: &mut Vec<Box<Render>>) {
-    w.clear();
-    for r in render_data {
-        r.render(w);
+pub enum RenderCommand {
+    Renderable(Box<Render>, Coord, Coord),
+    Map(Coord, Coord),
+    PrintBox(Coord, Coord),
+}
+
+pub struct RenderData {
+    lib_recv: Receiver<RenderCommand>,
+    map: Map,
+    printbox: PrintBox,
+}
+
+impl RenderData {
+    // Todo: make channels inside constructor?
+    pub fn new(recv: Receiver<RenderCommand>, map_recv: Receiver<MapCommand>, printbox_recv: Receiver<PrintCommand>) -> Self {
+        RenderData {
+            lib_recv: recv,
+            map: Map::new(map_recv),
+            printbox: PrintBox::new(printbox_recv),
+        }
     }
-    w.refresh();
+
+    pub fn render(&mut self, w: &mut Window) {
+        use self::RenderCommand::*;
+        w.clear();
+
+        let mut iter = self.lib_recv.iter();
+        while let Some(c) = iter.next() {
+            match c {
+                Renderable(mut r, tl, br)   => r.render(w, tl, br),
+                Map(tl, br)                 => self.map.render(w, tl, br),
+                PrintBox(tl, br)            => self.printbox.render(w, tl, br),
+            }
+        }
+
+        w.refresh();
+    }
 }

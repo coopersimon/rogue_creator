@@ -1,4 +1,6 @@
 use modscript::{PackageRoot, ExprRes, Value, mserr, Type, RunCode};
+use rand::random;
+
 
 pub const NAME: &'static str = "math";
 
@@ -9,6 +11,7 @@ pub fn call_ref() -> PackageRoot {
             "cos" => cos(a),
             "pow" => pow(a),
             "sqrt" => sqrt(a),
+            "rand" => rand(a),
             _ => mserr(Type::RunTime(RunCode::FunctionNotFound)),
         }
     })
@@ -72,6 +75,20 @@ fn sqrt(a: &[Value]) -> ExprRes {
     match a[0] {
         Val(F(f)) => Ok(Val(F(f.sqrt()))),
         Val(I(i)) => Ok(Val(F((i as f64).sqrt()))),
+        _ => mserr(Type::RunTime(RunCode::TypeError)),
+    }
+}
+
+fn rand(a: &[Value]) -> ExprRes {
+    use modscript::Value::*;
+    use modscript::VType::*;
+
+    if a.len() != 2 {
+        return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
+    }
+
+    match (&a[0], &a[1]) {
+        (Val(I(i)), Val(I(j))) => Ok(Val(I((random::<i64>() % j) + i))),
         _ => mserr(Type::RunTime(RunCode::TypeError)),
     }
 }

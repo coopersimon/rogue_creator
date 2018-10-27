@@ -3,7 +3,7 @@ use modscript;
 use modscript::Value as msValue;
 use serde_json;
 use serde_json::Value as jsonValue;
-use modscript::{Callable, FuncMap, expr_from_text};
+use modscript::{Callable, FuncMap, expr_from_text, ExprRes};
 
 use super::entity::{Entity, EntityInst};
 use super::level::{Level, LevelInst, TileInfo};
@@ -19,20 +19,16 @@ pub struct Global {
     pub source: Rc<FuncMap>,
 
     // Main functions
+    init: Callable,
     tick: Callable,
     end: Callable,
 
     // Constructors
     entities: HashMap<String, Rc<Entity>>,
     levels: HashMap<String, Rc<Level>>,
-    layouts: HashMap<String, Layout>,
 
-    // Runtime data
-    //glob_data:
-    pub glob_obj: msValue,
-    id_count: u64,
-    glob_instances: HashMap<u64, EntityInst>,
-    level_instances: HashMap<u64, LevelInst>,
+    // Layout
+    layouts: HashMap<String, Layout>,
 }
 
 impl Global {
@@ -40,17 +36,13 @@ impl Global {
         Global {
             source: Rc::new(FuncMap::new()),
 
+            init: Callable::new(None),
             tick: Callable::new(None),
             end: Callable::new(None),
 
             entities: HashMap::new(),
             levels: HashMap::new(),
             layouts: HashMap::new(),
-
-            glob_obj: msValue::Null,
-            id_count: 0,
-            glob_instances: HashMap::new(),
-            level_instances: HashMap::new(),
         }
     }
 
@@ -211,18 +203,31 @@ impl Global {
             None => Vec::new(),
         };
 
+        // TODO: check init exists
         // TODO: check end exists
+        self.init = eval_snippet(&packs, hub_data.get("init"), &self.source).unwrap();
         self.end = eval_snippet(&packs, hub_data.get("end"), &self.source).unwrap();
         self.tick = eval_snippet(&packs, hub_data.get("tick"), &self.source).unwrap();
-
-        // TODO: check init exists
-        let init = eval_snippet(&packs, hub_data.get("init"), &self.source).unwrap();
-        self.glob_obj = init.call(&self.source, &[]).unwrap();
         /* SCRIPTS */
 
         Ok(())
     }
 
+    pub fn run_input(&self, current_layout: &str, key: char) -> ExprRes {
+        self.layouts.get(current_layout).expect("Unrecognised layout.").run_input(key)
+    }
+
+    pub fn init(&self) -> ExprRes {
+        self.init.call(&self.source, &[])
+    }
+
+    pub fn tick(&self) -> ExprRes {
+        self.tick.call(&self.source, &[])
+    }
+
+    pub fn end(&self) -> ExprRes {
+        self.end.call(&self.source, &[])
+    }
 }
 
 // TODO: move this somewhere better
