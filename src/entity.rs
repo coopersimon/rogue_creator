@@ -13,6 +13,7 @@ pub struct Entity {
     source: Rc<FuncMap>,
 }
 
+#[derive(Clone)]
 pub struct EntityInst {
     pub id: u64,
     entity: Rc<Entity>,

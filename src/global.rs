@@ -3,7 +3,7 @@ use modscript;
 use modscript::Value as msValue;
 use serde_json;
 use serde_json::Value as jsonValue;
-use modscript::{Callable, FuncMap, expr_from_text, ExprRes};
+use modscript::{Callable, FuncMap, expr_from_text, ExprRes, VType};
 
 use super::entity::{Entity, EntityInst};
 use super::level::{Level, LevelInst, TileInfo};
@@ -29,6 +29,18 @@ pub struct Global {
 
     // Layout
     layouts: HashMap<String, Layout>,
+
+    // Database
+    // glob_data
+
+    // Mutable data
+    pub glob_obj: msValue,
+    pub current_layout: String,
+    pub glob_instances: HashMap<u64, EntityInst>,
+    pub level_instances: HashMap<u64, LevelInst>,
+
+    id_count: u64,
+    active_level: u64,
 }
 
 impl Global {
@@ -43,6 +55,14 @@ impl Global {
             entities: HashMap::new(),
             levels: HashMap::new(),
             layouts: HashMap::new(),
+
+            glob_obj: msValue::Null,
+            current_layout: String::new(),
+            glob_instances: HashMap::new(),
+            level_instances: HashMap::new(),
+
+            id_count: 0,
+            active_level: 0,
         }
     }
 
@@ -213,8 +233,8 @@ impl Global {
         Ok(())
     }
 
-    pub fn run_input(&self, current_layout: &str, key: char) -> ExprRes {
-        self.layouts.get(current_layout).expect("Unrecognised layout.").run_input(key)
+    pub fn run_input(&self, /*current_layout: &str, */key: char) -> ExprRes {
+        self.layouts.get(&self.current_layout).expect("Unrecognised layout.").run_input(key)
     }
 
     pub fn init(&self) -> ExprRes {
@@ -227,6 +247,32 @@ impl Global {
 
     pub fn end(&self) -> ExprRes {
         self.end.call(&self.source, &[])
+    }
+
+    pub fn create_level(&mut self, name: &str) -> ExprRes {
+        let level = self.levels.get(name).unwrap().clone();
+        let mut instance = LevelInst::new(level);
+        instance.init();
+        self.id_count += 1; // TODO (?): more robust id generation
+        self.level_instances.insert(self.id_count, instance);
+        Ok(msValue::Val(VType::I(self.id_count as i64)))
+    }
+
+    pub fn delete_level(&mut self, id: i64) -> ExprRes {
+        self.level_instances.remove(&(id as u64));
+        Ok(msValue::Null)
+    }
+
+    pub fn set_active_level(&mut self, id: i64) -> ExprRes {
+        self.active_level = id as u64;
+        Ok(msValue::Null)
+    }
+
+    pub fn clone_level(&mut self, id: i64) -> ExprRes {
+        self.id_count += 1;
+        let instance = self.level_instances.get(&(id as u64)).unwrap().clone();
+        self.level_instances.insert(self.id_count, instance);
+        Ok(msValue::Val(VType::I(self.id_count as i64)))
     }
 }
 

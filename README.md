@@ -144,8 +144,8 @@ Each of the following functions are found inside the package noted. They must be
 * `delete(entity)`: Despawns instance (if spawned), runs its 'delete' script, and then removes altogether.
 * `run_actions()`: Runs pre, action and post scripts for all instances in level instance list.
 
-##### Layout: render
-The following can only be found in the `render` function (or sub-functions):
+##### Layout: txtrend
+The following should only be found in the `render` function (or sub-functions):
 * `place_print(coord, coord)`: Places print between screen coords specified. Also determines current size of print buffer.
 * `place_map(coord, coord)`: Places level map at screen coords specified. Level MUST be LOADED before this is called.
 * `place_text(text, coord, coord)`: Places text between coords.
@@ -153,7 +153,6 @@ The following can only be found in the `render` function (or sub-functions):
 More (to do with colouring text, centering text etc) will be coming soon.
 
 ##### Layout and map display: layout
-* `layout(text)`: Changes active layout to "text", as defined in json. This MUST be called before the end of the `init` script.
 
 * `print(text)`: Adds text to the print buffer, which can be displayed on screen. If the text is longer than the display length, it is split into multiple entries.
 * `next_print()`: Shows the next entry in the print buffer.
@@ -168,10 +167,10 @@ More (to do with colouring text, centering text etc) will be coming soon.
 * `hide_surround(coord)`: hides the tiles around and including coord.
 
 ##### Level interaction: level
-* `create_level(text)`: Creates level of name "text". Returns integer id to refer to the level with.
-* `delete_level(integer)`: Deletes level of id "integer", if it exists.
-* `load_level(integer)`: Makes the active level id "integer". Uses it to render the map, etc.
-* `clone_level(integer)`: Clones the level id "integer", and returns a new id to refer to the new level with.
+* `create(text)`: Creates level of name "text". Returns integer id to refer to the level with.
+* `delete(integer)`: Deletes level of id "integer", if it exists.
+* `load(integer)`: Makes the active level id "integer". Uses it to render the map, etc.
+* `clone(integer)`: Clones the level id "integer", and returns a new id to refer to the new level with.
 
 * `level_data()`: Gets a mutable reference to level data.
 * `instance_at(coord)`: Returns instance if one exists at coords specified. Returns null if nothing is at those coords.
@@ -193,6 +192,7 @@ More (to do with colouring text, centering text etc) will be coming soon.
 ##### Global data access: global
 * `get()`: gets a mutable reference to the global object.
 * `data()`: gets a reference to the global data object.
+* `set_layout(text)`: Changes active layout to "text", as defined in json. This MUST be called before the end of the `init` script.
 
 ##### Mathematical: math
 * `sin(n)`: Runs sin function on number.

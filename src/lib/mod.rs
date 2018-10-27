@@ -5,6 +5,8 @@ use modscript::{Value, VType, Error, Type, RunCode};
 
 pub mod math;
 pub mod txtrend;
+pub mod glob;
+pub mod level;
 
 // Converts objects/pairs to Coord
 fn to_coord(val: &Value) -> Result<Coord, Error> {

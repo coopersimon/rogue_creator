@@ -30,6 +30,16 @@ pub struct Level {
     source: Rc<FuncMap>,
 }
 
+#[derive(Clone)]
+pub struct LevelInst {
+    level: Rc<Level>,
+    tile_map: Vec<Vec<char>>,
+    local_instances: HashMap<u64, EntityInst>,
+    instance_locs: HashMap<Coord, u64>,
+    data: Value,
+}
+
+
 impl Level {
     pub fn new(x_size: u64,
         y_size: u64,
@@ -58,14 +68,6 @@ impl Level {
             data: Value::Null,
         }
     }*/
-}
-
-pub struct LevelInst {
-    level: Rc<Level>,
-    tile_map: Vec<Vec<char>>,
-    local_instances: HashMap<u64, EntityInst>,
-    instance_locs: HashMap<Coord, u64>,
-    data: Value,
 }
 
 impl LevelInst {
