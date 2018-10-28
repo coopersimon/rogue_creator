@@ -15,6 +15,7 @@ pub fn call_ref(state: Glob) -> PackageRoot {
             "create_global" => create_global(a, &state),
             "create"        => create(a, &state),
             "delete"        => delete(a, &state),
+            "data"          => obj(a, &state),
             _ => mserr(Type::RunTime(RunCode::FunctionNotFound)),
         }
     })
@@ -58,6 +59,24 @@ fn delete(a: &[Value], state: &Glob) -> ExprRes {
         Val(I(i))   => state.borrow_mut().delete_entity(i),
         Ref(ref r)  => match *r.borrow() {
             I(i)    => state.borrow_mut().delete_entity(i),
+            _       => mserr(Type::RunTime(RunCode::TypeError)),
+        },
+        _ => mserr(Type::RunTime(RunCode::TypeError)),
+    }
+}
+
+fn obj(a: &[Value], state: &Glob) -> ExprRes {
+    use modscript::Value::*;
+    use modscript::VType::*;
+
+    if a.len() != 1 {
+        return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
+    }
+
+    match a[0] {
+        Val(I(i))   => state.borrow().entity_obj(i),
+        Ref(ref r)  => match *r.borrow() {
+            I(i)    => state.borrow().entity_obj(i),
             _       => mserr(Type::RunTime(RunCode::TypeError)),
         },
         _ => mserr(Type::RunTime(RunCode::TypeError)),

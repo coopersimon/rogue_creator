@@ -16,7 +16,7 @@ pub fn call_ref(state: Glob) -> PackageRoot {
             "delete"    => delete(a, &state),
             "load"      => set_active(a, &state),
             "clone"     => clone(a, &state),
-            "obj"       => obj(a, &state),
+            "data"      => obj(a, &state),
             _ => mserr(Type::RunTime(RunCode::FunctionNotFound)),
         }
     })

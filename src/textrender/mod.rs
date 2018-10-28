@@ -8,8 +8,11 @@ mod map;
 mod printbox;
 
 use Coord;
-use self::map::{Map, MapCommand};
-use self::printbox::{PrintBox, PrintCommand};
+use self::map::Map;
+use self::printbox::PrintBox;
+
+pub use self::map::MapCommand;
+pub use self::printbox::PrintCommand;
 
 use pancurses::Window;
 

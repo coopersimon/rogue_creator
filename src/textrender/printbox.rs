@@ -1,17 +1,18 @@
 use super::Render;
 use Coord;
 use pancurses::Window;
+use textitem::TextItem;
 
 use std::sync::mpsc::Receiver;
 
 pub enum PrintCommand {
-    NewText(String),
+    NewText(TextItem),
     Next,
     Clear,
 }
 
 pub struct PrintBox {
-    display_text: Vec<String>,
+    display_text: Vec<TextItem>,
     lib_recv: Receiver<PrintCommand>,
 }
 
@@ -43,8 +44,9 @@ impl Render for PrintBox {
 
         // TODO: split into lines
         let length = bottom_right.0 - top_left.0;
-        if self.display_text.len() > 0 {
-            w.mvaddnstr(top_left.1 as i32, top_left.0 as i32, &self.display_text[0], length as i32);
-        }
+        match self.display_text.first() {
+            Some(t) => w.mvaddnstr(top_left.1 as i32, top_left.0 as i32, &t.text, length as i32),
+            None    => 0,
+        };
     }
 }

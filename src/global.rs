@@ -308,6 +308,15 @@ impl Global {
             .remove_instance(id as u64);
         Ok(msValue::Null)
     }
+
+    pub fn entity_obj(&self, id: i64) -> ExprRes {
+        match self.glob_instances.get(&(id as u64)) {
+            Some(e) => Ok(e.get_data()),
+            None    => Ok(self.level_instances.get(&self.active_level)
+                              .unwrap()
+                              .get_entity_data(id as u64)),
+        }
+    }
 }
 
 // TODO: move this somewhere better

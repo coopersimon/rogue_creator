@@ -9,7 +9,7 @@ mod global;
 mod entity;
 mod level;
 mod layout;
-//mod state;
+mod textitem;
 
 use pancurses::{initscr, endwin, set_title, noecho, Window, Input};
 
@@ -24,6 +24,7 @@ fn main() {
 
     // Channels and objects
     let (s_rend, r_rend) = channel();
+    let (s_pbox, r_pbox) = channel();
 
     let glob = Rc::new(RefCell::new(global::Global::new()));
     //let state = Rc::new(RefCell::new(state::State::new()));
@@ -39,6 +40,8 @@ fn main() {
         .attach_package(lib::level::NAME, lib::level::call_ref(glob.clone()));
     Rc::get_mut(&mut glob.borrow_mut().source).unwrap()
         .attach_package(lib::entity::NAME, lib::entity::call_ref(glob.clone()));
+    Rc::get_mut(&mut glob.borrow_mut().source).unwrap()
+        .attach_package(lib::pbox::NAME, lib::pbox::call_ref(s_pbox));
 
     // TODO: get from arg
     let hub_file = "example/rogue.hub.json";

@@ -150,6 +150,10 @@ impl LevelInst {
     pub fn get_data(&self) -> Value {
         self.data.clone()
     }
+
+    pub fn get_entity_data(&self, id: u64) -> Value {
+        self.local_instances.get(&id).unwrap().get_data()
+    }
 }
 
 impl Drop for LevelInst {

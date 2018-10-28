@@ -73,7 +73,7 @@ impl EntityInst {
         self.entity.post_action.call(&self.entity.source, &[self.fields.clone()])
     }
 
-    pub fn get_fields(&self) -> Value {
+    pub fn get_data(&self) -> Value {
         self.fields.clone()
     }
 }

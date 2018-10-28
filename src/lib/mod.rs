@@ -1,6 +1,7 @@
 // Extension libraries used for internal engine things
 
 use Coord;
+use textitem::TextItem;
 use modscript::{Value, VType, Error, Type, RunCode};
 
 pub mod math;
@@ -8,6 +9,7 @@ pub mod txtrend;
 pub mod glob;
 pub mod level;
 pub mod entity;
+pub mod pbox;
 
 // Converts objects/pairs to Coord
 fn to_coord(val: &Value) -> Result<Coord, Error> {
@@ -47,6 +49,21 @@ fn to_coord(val: &Value) -> Result<Coord, Error> {
             };
             Ok((x, y))
         },
+        _           => Err(Error::new(Type::RunTime(RunCode::TypeError))),
+    }
+}
+
+fn to_text_item(val: &Value) -> Result<TextItem, Error> {
+    use self::Value::*;
+    use self::VType::*;
+
+    match val {
+        Str(ref s)  => {
+            Ok(TextItem::new(s.borrow().clone(), None))
+        },
+        /*Obj(ref o)  => {
+
+        },*/
         _           => Err(Error::new(Type::RunTime(RunCode::TypeError))),
     }
 }

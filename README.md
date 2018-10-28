@@ -143,6 +143,7 @@ Each of the following functions are found inside the package noted. They must be
 * `create_global(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the global instance list.
 * `create(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the level's instance list.
 * `delete(integer)`: Despawns instance (if spawned), runs its 'delete' script, and then removes altogether.
+* `data(integer)`: Gets a mutable reference to entity data (returned by init script).
 * `run_actions()`: Runs pre, action and post scripts for all instances in level instance list.
 
 ##### Layout: txtrend
@@ -153,15 +154,15 @@ The following should only be found in the `render` function (or sub-functions):
 
 More (to do with colouring text, centering text etc) will be coming soon.
 
-##### Layout and map display: layout
-
+##### Print box: pbox
 * `print(text)`: Adds text to the print buffer, which can be displayed on screen. If the text is longer than the display length, it is split into multiple entries.
-* `next_print()`: Shows the next entry in the print buffer.
-* `clear_print()`: Clears entire print buffer and blanks.
+* `next()`: Shows the next entry in the print buffer.
+* `clear()`: Clears entire print buffer and blanks.
 
-* `show_map()`: reveals entire map for rendering.
-* `hide_map()`: hides entire map so it isn't rendered.
-* `map_display(coord, coord)`: Selects what to show with `place_map`. (defaults to the whole map from top left)
+##### Map: map
+* `show_all()`: reveals entire map for rendering.
+* `hide_all()`: hides entire map so it isn't rendered.
+* `display(coord, coord)`: Selects what to show with `place_map`. (defaults to the whole map from top left)
 * `show_tiles(coord)`: reveals all connected tiles of the same type from coord (if possible).
 * `hide_tiles(coord)`: hides all connected tiles of the same type from coord (if possible).
 * `show_surround(coord)`: reveals the tiles around and including coord.
@@ -173,7 +174,7 @@ More (to do with colouring text, centering text etc) will be coming soon.
 * `load(integer)`: Makes the active level id "integer". Uses it to render the map, etc.
 * `clone(integer)`: Clones the level id "integer", and returns a new id to refer to the new level with.
 
-* `level_data()`: Gets a mutable reference to level data.
+* `data()`: Gets a mutable reference to level data (returned by init script).
 * `instance_at(coord)`: Returns instance if one exists at coords specified. Returns null if nothing is at those coords.
 * `location_of(entity)`: Returns coord containing location of instance.
 
