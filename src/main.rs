@@ -37,6 +37,8 @@ fn main() {
         .attach_package(lib::glob::NAME, lib::glob::call_ref(glob.clone()));
     Rc::get_mut(&mut glob.borrow_mut().source).unwrap()
         .attach_package(lib::level::NAME, lib::level::call_ref(glob.clone()));
+    Rc::get_mut(&mut glob.borrow_mut().source).unwrap()
+        .attach_package(lib::entity::NAME, lib::entity::call_ref(glob.clone()));
 
     // TODO: get from arg
     let hub_file = "example/rogue.hub.json";

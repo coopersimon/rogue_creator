@@ -15,7 +15,6 @@ pub struct Entity {
 
 #[derive(Clone)]
 pub struct EntityInst {
-    pub id: u64,
     entity: Rc<Entity>,
     fields: Value, // Obj
 }
@@ -53,11 +52,10 @@ impl Entity {
 }
 
 impl EntityInst {
-    pub fn new(entity: Rc<Entity>, id: u64) -> Result<Self, Error> {
+    pub fn new(entity: Rc<Entity>) -> Result<Self, Error> {
         let fields = entity.init.call(&entity.source, &[])?;
         Ok(EntityInst {
             entity: entity.clone(),
-            id: id,
             fields: fields,
         })
     }

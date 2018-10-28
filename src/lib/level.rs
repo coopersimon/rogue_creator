@@ -16,6 +16,7 @@ pub fn call_ref(state: Glob) -> PackageRoot {
             "delete"    => delete(a, &state),
             "load"      => set_active(a, &state),
             "clone"     => clone(a, &state),
+            "obj"       => obj(a, &state),
             _ => mserr(Type::RunTime(RunCode::FunctionNotFound)),
         }
     })
@@ -86,4 +87,12 @@ fn clone(a: &[Value], state: &Glob) -> ExprRes {
         },
         _ => mserr(Type::RunTime(RunCode::TypeError)),
     }
+}
+
+fn obj(a: &[Value], state: &Glob) -> ExprRes {
+    if a.len() != 0 {
+        return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
+    }
+
+    state.borrow().level_obj()
 }

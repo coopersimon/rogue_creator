@@ -7,6 +7,7 @@ pub mod math;
 pub mod txtrend;
 pub mod glob;
 pub mod level;
+pub mod entity;
 
 // Converts objects/pairs to Coord
 fn to_coord(val: &Value) -> Result<Coord, Error> {

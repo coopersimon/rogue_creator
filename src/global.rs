@@ -248,11 +248,14 @@ impl Global {
     pub fn end(&self) -> ExprRes {
         self.end.call(&self.source, &[])
     }
+}
 
+// LEVEL
+impl Global {
     pub fn create_level(&mut self, name: &str) -> ExprRes {
         let level = self.levels.get(name).unwrap().clone();
         let mut instance = LevelInst::new(level);
-        instance.init();
+        instance.init()?;
         self.id_count += 1; // TODO (?): more robust id generation
         self.level_instances.insert(self.id_count, instance);
         Ok(msValue::Val(VType::I(self.id_count as i64)))
@@ -273,6 +276,37 @@ impl Global {
         let instance = self.level_instances.get(&(id as u64)).unwrap().clone();
         self.level_instances.insert(self.id_count, instance);
         Ok(msValue::Val(VType::I(self.id_count as i64)))
+    }
+
+    pub fn level_obj(&self) -> ExprRes {
+        Ok(self.level_instances.get(&self.active_level).unwrap().get_data())
+    }
+}
+
+// ENTITY
+impl Global {
+    pub fn create_glob_entity(&mut self, name: &str) -> ExprRes {
+        let entity = self.entities.get(name).unwrap().clone();
+        let instance = EntityInst::new(entity)?;
+        self.id_count += 1; // TODO (?): more robust id generation
+        self.glob_instances.insert(self.id_count, instance);
+        Ok(msValue::Val(VType::I(self.id_count as i64)))
+    }
+
+    pub fn create_local_entity(&mut self, name: &str) -> ExprRes {
+        let entity = self.entities.get(name).unwrap().clone();
+        let instance = EntityInst::new(entity)?;
+        self.id_count += 1; // TODO (?): more robust id generation
+        self.level_instances.get_mut(&self.active_level).unwrap()
+            .add_instance(self.id_count, instance);
+        Ok(msValue::Val(VType::I(self.id_count as i64)))
+    }
+
+    pub fn delete_entity(&mut self, id: i64) -> ExprRes {
+        self.glob_instances.remove(&(id as u64));
+        self.level_instances.get_mut(&self.active_level).unwrap()
+            .remove_instance(id as u64);
+        Ok(msValue::Null)
     }
 }
 

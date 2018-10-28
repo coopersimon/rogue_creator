@@ -1,4 +1,4 @@
-use modscript::{Value, Callable, FuncMap};
+use modscript::{Value, Callable, FuncMap, Error};
 
 use Coord;
 use super::entity::EntityInst;
@@ -81,8 +81,9 @@ impl LevelInst {
         }
     }
 
-    pub fn init(&mut self) {
-        self.data = self.level.init.call(&self.level.source, &[]).unwrap();
+    pub fn init(&mut self) -> Result<(), Error> {
+        self.data = self.level.init.call(&self.level.source, &[])?;
+        Ok(())
     }
 
     pub fn set_tile(&mut self, tile: char, loc: Coord) -> bool {
@@ -100,8 +101,7 @@ impl LevelInst {
     }
 
     /* trait InstanceStore */
-    pub fn add_instance(&mut self, instance: EntityInst) {
-        let id = instance.id;
+    pub fn add_instance(&mut self, id: u64, instance: EntityInst) {
         self.local_instances.insert(id, instance);
     }
 

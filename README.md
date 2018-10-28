@@ -140,8 +140,9 @@ There are a number of engine functions which can be called. They exist in differ
 Each of the following functions are found inside the package noted. They must be imported before use.
 
 ##### Entity manipulation: entity
-* `create_entity(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the level's instance list.
-* `delete(entity)`: Despawns instance (if spawned), runs its 'delete' script, and then removes altogether.
+* `create_global(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the global instance list.
+* `create(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the level's instance list.
+* `delete(integer)`: Despawns instance (if spawned), runs its 'delete' script, and then removes altogether.
 * `run_actions()`: Runs pre, action and post scripts for all instances in level instance list.
 
 ##### Layout: txtrend
