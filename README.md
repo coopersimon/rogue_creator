@@ -52,7 +52,7 @@ Below a brief documentation can be found.
 The string object can be used when visual formatting is desired. It is set up as below:
 {
   text: String,
-  length: Int/Null,
+  len: Int/Null,
   colour: String/Null,
   options: String/List(String)/Null
 }

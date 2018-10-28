@@ -11,6 +11,7 @@ use Coord;
 use self::map::Map;
 use self::printbox::PrintBox;
 
+pub use self::textbox::TextBox;
 pub use self::map::MapCommand;
 pub use self::printbox::PrintCommand;
 

@@ -1,5 +1,5 @@
-use super::to_coord;
-use textrender::RenderCommand;
+use super::{to_coord, to_text_item};
+use textrender::{RenderCommand, TextBox};
 
 use modscript::{PackageRoot, ExprRes, Value, mserr, Type, RunCode};
 
@@ -48,16 +48,10 @@ fn place_text(args: &[Value], sender: &Sender<RenderCommand>) -> ExprRes {
         return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
     }
 
-    let text = match args[0] {
-        Value::Str(ref s) => {
-            let s = s.borrow();
-            s.clone()
-        },
-        _ => return mserr(Type::RunTime(RunCode::TypeError)),
-    };
+    let text = to_text_item(&args[0])?;
     let tl = to_coord(&args[1])?;
     let br = to_coord(&args[2])?;
 
-    sender.send(RenderCommand::Map(tl, br)).unwrap();
+    sender.send(RenderCommand::Renderable(Box::new(TextBox::new(text)), tl, br)).unwrap();
     Ok(Value::Null)
 }
