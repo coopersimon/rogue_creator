@@ -1,25 +1,12 @@
 use modscript::{Value, Callable, FuncMap, Error};
 
 use Coord;
+use tile::{TileInfo, TileID};
 use super::entity::EntityInst;
 use super::global::Global;
 
 use std::collections::HashMap;
 use std::rc::Rc;
-
-pub struct TileInfo {
-    default_tile: char,
-    collide_tiles: HashMap<char, bool>,
-}
-
-impl TileInfo {
-    pub fn new(default_tile: char, collide_tiles: HashMap<char, bool>) -> Self {
-        TileInfo {
-            default_tile: default_tile,
-            collide_tiles: collide_tiles,
-        }
-    }
-}
 
 pub struct Level {
     x: usize,
@@ -33,7 +20,7 @@ pub struct Level {
 #[derive(Clone)]
 pub struct LevelInst {
     level: Rc<Level>,
-    tile_map: Vec<Vec<char>>,
+    tile_map: Vec<Vec<TileID>>,
     local_instances: HashMap<u64, EntityInst>,
     instance_locs: HashMap<Coord, u64>,
     data: Value,
@@ -74,7 +61,7 @@ impl LevelInst {
     pub fn new(level: Rc<Level>) -> Self {
         LevelInst {
             level: level.clone(),
-            tile_map: vec![vec![level.tile_info.default_tile; level.x]; level.y],
+            tile_map: vec![vec![level.tile_info.get_default(); level.x]; level.y],
             local_instances: HashMap::new(),
             instance_locs: HashMap::new(),
             data: Value::Null,
@@ -86,17 +73,21 @@ impl LevelInst {
         Ok(())
     }
 
-    pub fn set_tile(&mut self, tile: char, loc: Coord) -> bool {
+    // TODO: Error handling here?
+    pub fn get_tile_id(&self, tile_name: &str) -> Option<TileID> {
+        self.level.tile_info.get_id(tile_name)
+    }
+
+    pub fn set_tile(&mut self, tile: TileID, loc: Coord) -> bool {
         let (x,y) = loc;
         if y >= self.tile_map.len() {
             false
         } else if x >= self.tile_map[0].len() {
             false
-        } else if self.level.tile_info.collide_tiles.contains_key(&tile) {
+        } else {
+            // Assuming ID is valid
             self.tile_map[y][x] = tile;
             true
-        } else {
-            false
         }
     }
 
@@ -116,7 +107,7 @@ impl LevelInst {
             false
         } else if x >= self.tile_map[0].len() {
             false
-        } else if self.level.tile_info.collide_tiles[&self.tile_map[y][x]] {
+        } else if self.level.tile_info.get_item(self.tile_map[y][x]).unwrap().collide {
             false
         } else {
             self.instance_locs.insert(loc, id);

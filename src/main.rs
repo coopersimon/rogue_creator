@@ -10,8 +10,11 @@ mod entity;
 mod level;
 mod layout;
 mod textitem;
+mod tile;
 
 use pancurses::{initscr, endwin, set_title, noecho, Window, Input};
+
+use textrender::RenderData;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -25,6 +28,7 @@ fn main() {
     // Channels and objects
     let (s_rend, r_rend) = channel();
     let (s_pbox, r_pbox) = channel();
+    let (s_map, r_map) = channel();
 
     let glob = Rc::new(RefCell::new(global::Global::new()));
     //let state = Rc::new(RefCell::new(state::State::new()));
@@ -42,6 +46,11 @@ fn main() {
         .attach_package(lib::entity::NAME, lib::entity::call_ref(glob.clone()));
     Rc::get_mut(&mut glob.borrow_mut().source).unwrap()
         .attach_package(lib::pbox::NAME, lib::pbox::call_ref(s_pbox));
+    Rc::get_mut(&mut glob.borrow_mut().source).unwrap()
+        .attach_package(lib::map::NAME, lib::map::call_ref(s_map));
+    Rc::get_mut(&mut glob.borrow_mut().source).unwrap()
+        .attach_package(lib::makemap::NAME, lib::makemap::call_ref(glob.clone()));
+
 
     // TODO: get from arg
     let hub_file = "example/rogue.hub.json";
@@ -49,13 +58,13 @@ fn main() {
     glob.borrow_mut().init_game(hub_file).unwrap();
 
     // TODO: get from hub file
-    let window = init_terminal("Rogue");
+    let mut window = init_terminal("Rogue");
 
-    //Rc::get_mut(&mut state.borrow_mut().glob_obj) = glob.init.call();
+    let mut renderer = RenderData::new(r_rend, r_map, r_pbox);
 
     // run
     loop {
-        //renderer.render(&mut window);
+        renderer.render(&mut window);
         match window.getch() {
             Some(Input::Character(c)) => {glob.borrow().run_input(c).unwrap();},
             Some(_) => (), // TODO: special char support

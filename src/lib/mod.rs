@@ -10,6 +10,8 @@ pub mod glob;
 pub mod level;
 pub mod entity;
 pub mod pbox;
+pub mod map;
+pub mod makemap;
 
 // Converts objects/pairs to Coord
 fn to_coord(val: &Value) -> Result<Coord, Error> {

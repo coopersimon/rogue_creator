@@ -6,13 +6,16 @@ use serde_json::Value as jsonValue;
 use modscript::{Callable, FuncMap, expr_from_text, ExprRes, VType};
 
 use super::entity::{Entity, EntityInst};
-use super::level::{Level, LevelInst, TileInfo};
+use super::level::{Level, LevelInst};
 use super::layout::Layout;
+use super::tile::{TileItem, TileInfo};
+use Coord;
 
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::fs::File;
 use std::io::{BufReader, Read};
+use std::cmp;
 
 pub struct Global {
     // Code
@@ -142,18 +145,18 @@ impl Global {
             };
 
             let tile = level_data["tiles"].as_object().unwrap();
-            let default_tile = tile["default"].as_str().unwrap().chars().next();
-            let mut collide_tiles = HashMap::new();
-            for v in tile["collide"].as_array().unwrap().iter() {
-                let ch = v.as_str().unwrap().chars().next();
-                collide_tiles.insert(ch.unwrap(), true);
+            let mut tile_info = TileInfo::new();
+            for (ref name, ref t) in tile["collide"].as_object().unwrap().iter() {
+                let i = TileItem::new(t.as_str().unwrap().to_string(), true);
+                tile_info.add_tile(name, i);
             }
-            for v in tile["nocollide"].as_array().unwrap().iter() {
-                let ch = v.as_str().unwrap().chars().next();
-                collide_tiles.insert(ch.unwrap(), false);
+            for (ref name, ref t) in tile["nocollide"].as_object().unwrap().iter() {
+                let i = TileItem::new(t.as_str().unwrap().to_string(), false);
+                tile_info.add_tile(name, i);
             }
+            tile_info.set_default(tile["default"].as_str().unwrap());
 
-            let tile_info = Rc::new(TileInfo::new(default_tile.unwrap(), collide_tiles));
+            let tile_info = Rc::new(tile_info);
 
             for (ref name, ref lev) in level_data["levels"].as_object().unwrap().iter() {
                 self.levels.insert(name.to_string(), Rc::new(Level::new(
@@ -316,6 +319,48 @@ impl Global {
                               .unwrap()
                               .get_entity_data(id as u64)),
         }
+    }
+}
+
+// LEVEL MAP
+impl Global {
+    pub fn fill_tiles(&mut self, tile_name: &str, tl: Coord, br: Coord) -> ExprRes {
+        let mut level = self.level_instances.get_mut(&self.active_level).unwrap();
+        let tile = level.get_tile_id(tile_name).unwrap();
+        let y_start = cmp::min(tl.1, br.1);
+        let x_start = cmp::min(tl.0, br.0);
+        let y_range = ((tl.1 - br.1) as isize).abs() as usize;
+        let x_range = ((tl.0 - br.0) as isize).abs() as usize;
+
+        for y in y_start..(y_start + y_range) {
+            for x in x_start..(x_start + x_range) {
+                level.set_tile(tile, (x,y));
+            }
+        }
+        Ok(msValue::Null)
+    }
+
+    pub fn draw_line(&mut self, tile_name: &str, s: Coord, e: Coord) -> ExprRes {
+        let mut level = self.level_instances.get_mut(&self.active_level).unwrap();
+        let tile = level.get_tile_id(tile_name).unwrap();
+        let y_start = cmp::min(s.1, e.1);
+        let x_start = cmp::min(s.0, e.0);
+        let y_range = ((s.1 - e.1) as isize).abs() as usize;
+        let x_range = ((s.0 - e.0) as isize).abs() as usize;
+
+        // Bresenham's Algorithm:
+        // For x in x0->x1: y = (y1 - y0) / (x1 - x0) * (x - x0) + y0
+        let gradient = y_range / x_range;
+        let mut y = y_start;
+        for x in x_start..(x_start + x_range) {
+            let new_y = gradient * (x - x_start) + y_start;
+            if new_y != y {
+                level.set_tile(tile, (x,y));
+                y = new_y;
+            }
+            level.set_tile(tile, (x,y));
+        }
+        Ok(msValue::Null)
     }
 }
 

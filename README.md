@@ -143,6 +143,7 @@ Each of the following functions are found inside the package noted. They must be
 * `create_global(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the global instance list.
 * `create(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the level's instance list.
 * `delete(integer)`: Despawns instance (if spawned), runs its 'delete' script, and then removes altogether.
+* `clone(integer)`: Clones the entity id "integer", and returns a new id to refer to the new entity with.
 * `data(integer)`: Gets a mutable reference to entity data (returned by init script).
 * `run_actions()`: Runs pre, action and post scripts for all instances in level instance list.
 
@@ -160,40 +161,39 @@ More (to do with colouring text, centering text etc) will be coming soon.
 * `clear()`: Clears entire print buffer and blanks.
 
 ##### Map: map
+* `display(coord, coord)`: Selects what to show with `place_map`. (defaults to the whole map from top left)
 * `show_all()`: reveals entire map for rendering.
 * `hide_all()`: hides entire map so it isn't rendered.
-* `display(coord, coord)`: Selects what to show with `place_map`. (defaults to the whole map from top left)
 * `show_tiles(coord)`: reveals all connected tiles of the same type from coord (if possible).
 * `hide_tiles(coord)`: hides all connected tiles of the same type from coord (if possible).
 * `show_surround(coord)`: reveals the tiles around and including coord.
 * `hide_surround(coord)`: hides the tiles around and including coord.
 
 ##### Level interaction: level
-* `create(text)`: Creates level of name "text". Returns integer id to refer to the level with.
+* `create(string)`: Creates level of name "text". Returns integer id to refer to the level with.
 * `delete(integer)`: Deletes level of id "integer", if it exists.
 * `load(integer)`: Makes the active level id "integer". Uses it to render the map, etc.
 * `clone(integer)`: Clones the level id "integer", and returns a new id to refer to the new level with.
 
 * `data()`: Gets a mutable reference to level data (returned by init script).
 * `instance_at(coord)`: Returns instance if one exists at coords specified. Returns null if nothing is at those coords.
-* `location_of(entity)`: Returns coord containing location of instance.
+* `location_of(integer)`: Returns coord containing location of instance.
 
 ##### Map creation: makemap
 * `fill_tile(string, coord, <coord>)`: Draw tiles between coords, or at first coord if second is not specified.
 * `draw_line(string, coord, coord)`: Draws a line between the coords.
-* `spawn_entity(entity, coord)`: Spawns instance at coords specified. If not possible, then returns false. If successful, returns true.
-* `despawn_entity(entity)`: Despawns instance, however keeps data so it can be re-spawned.
+* `spawn_entity(integer, coord)`: Spawns instance at coords specified. If not possible, then returns false. If successful, returns true.
+* `despawn_entity(integer)`: Despawns instance, however keeps data so it can be re-spawned.
+* `set_entity_display(integer, text)`: Sets visuals for entity to the text object specified. Text contained must be a single character.
 
 ##### Flow control: control
 * `wait(integer)`: Waits "integer" milliseconds.
-
 * `exit()`: Exits script execution engine and returns to last JSON call.
-
 * `end_game()`: Runs 'end' script. Once 'end' script returns, the game ends and engine closes.
 
-##### Global data access: global
-* `get()`: gets a mutable reference to the global object.
-* `data()`: gets a reference to the global data object.
+##### Global data access: glob
+* `obj()`: gets a mutable reference to the global object.
+* `data()`: gets a reference to the global database.
 * `set_layout(text)`: Changes active layout to "text", as defined in json. This MUST be called before the end of the `init` script.
 
 ##### Mathematical: math

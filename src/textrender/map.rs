@@ -5,8 +5,7 @@ use pancurses::Window;
 use std::sync::mpsc::Receiver;
 
 pub enum MapCommand {
-    DisplayTopLeft(Coord),
-    DisplayBottomRight(Coord),
+    Display(Coord, Coord),
     MapData(Vec<Vec<char>>),
     SetDisplayArea(Coord, Coord, bool),
     ToggleDisplayArea(Coord, Coord),
@@ -24,7 +23,7 @@ impl Map {
     pub fn new(recv: Receiver<MapCommand>) -> Self {
         Map {
             display_top_left: (0,0),
-            display_bottom_right: (0,0),
+            display_bottom_right: (0,0), //TODO: change to max?
             map_data: Vec::new(),
             display_area: Vec::new(),
             lib_recv: recv,
@@ -51,8 +50,10 @@ impl Map {
                         }
                     }
                 },
-                DisplayTopLeft(v)       => self.display_top_left = v,
-                DisplayBottomRight(v)   => self.display_bottom_right = v,
+                Display(tl, br)         => {
+                    self.display_top_left = tl;
+                    self.display_bottom_right = br;
+                },
                 MapData(v)              => self.map_data = v,
             }
         }

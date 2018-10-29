@@ -4,20 +4,20 @@
     },
 
     "tiles": {
-        "default": " ",
-        "collide": [
-            " ",
-            "\u23AF",
-            "\u23B8",
-            "\u23BE",
-            "\u23BF",
-            "\u23CB",
-            "\u23CC"
-        ],
-        "nocollide": [
-            ".",
-            "#"
-        ]
+        "collide": {
+            "blank": " ",
+            "topwall": "\u23AF",
+            "sidewall": "\u23B8",
+            "topleftwall": "\u23BE",
+            "botleftwall": "\u23BF",
+            "toprightwall": "\u23CB",
+            "botrightwall": "\u23CC"
+        },
+        "nocollide": {
+            "floor": ".",
+            "path": "#"
+        },
+        "default": "blank"
     },
 
     "levels": {
@@ -25,11 +25,7 @@
             "x": 48,
             "y": 48,
             "init": "l::make_level()",
-            "delete": "l::switch_level('level_2')",
-            "data": {
-                "entities": [200,201,202],
-                "statics": [301,302,401,402,500]
-            }
+            "delete": "l::switch_level('level_2')"
         }
     }
 }
