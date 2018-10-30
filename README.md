@@ -182,8 +182,8 @@ More (to do with colouring text, centering text etc) will be coming soon.
 ##### Map creation: makemap
 * `fill_tile(string, coord, <coord>)`: Draw tiles between coords, or at first coord if second is not specified.
 * `draw_line(string, coord, coord)`: Draws a line between the coords.
-* `spawn_entity(integer, coord)`: Spawns instance at coords specified. If not possible, then returns false. If successful, returns true.
-* `despawn_entity(integer)`: Despawns instance, however keeps data so it can be re-spawned.
+* `spawn(integer, coord)`: Spawns instance at coords specified. If not possible, then returns false. If successful, returns true.
+* `despawn(integer)`: Despawns instance, however keeps data so it can be re-spawned.
 * `set_entity_display(integer, text)`: Sets visuals for entity to the text object specified. Text contained must be a single character.
 
 ##### Flow control: control

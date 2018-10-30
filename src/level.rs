@@ -3,7 +3,6 @@ use modscript::{Value, Callable, FuncMap, Error};
 use Coord;
 use tile::{TileInfo, TileID};
 use super::entity::EntityInst;
-use super::global::Global;
 
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -22,7 +21,7 @@ pub struct LevelInst {
     level: Rc<Level>,
     tile_map: Vec<Vec<TileID>>,
     local_instances: HashMap<u64, EntityInst>,
-    instance_locs: HashMap<Coord, u64>,
+    instance_locs: HashMap<u64, Coord>,
     data: Value,
 }
 
@@ -110,32 +109,29 @@ impl LevelInst {
         } else if self.level.tile_info.get_item(self.tile_map[y][x]).unwrap().collide {
             false
         } else {
-            self.instance_locs.insert(loc, id);
+            self.instance_locs.insert(id, loc);
             true
         }
     }
 
     pub fn despawn_instance(&mut self, id: u64) -> bool {
-        let start_len = self.instance_locs.len();
-        self.instance_locs.retain(|_, v| *v != id);
-        start_len != self.instance_locs.len()
+        self.instance_locs.remove(&id).is_some()
     }
 
-    // TODO: cleaner way of doing this?
-    pub fn instance_at(&self, loc: Coord, glob: &mut Global) -> Option<u64> {
-        match self.instance_locs.get(&loc) {
-            Some(i) => Some(i.clone()),
-            None => None,
-        }
-    }
-
-    pub fn location_of(&self, id: u64) -> Option<Coord> {
+    pub fn instance_at(&self, loc: Coord) -> Option<u64> {
         for (&k, &v) in self.instance_locs.iter() {
-            if v == id {
+            if v == loc {
                 return Some(k.clone());
             }
         }
         None
+    }
+
+    pub fn location_of(&self, id: u64) -> Option<Coord> {
+        match self.instance_locs.get(&id) {
+            Some(i) => Some(i.clone()),
+            None => None,
+        }
     }
 
     pub fn get_data(&self) -> Value {

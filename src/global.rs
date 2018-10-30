@@ -284,6 +284,23 @@ impl Global {
     pub fn level_obj(&self) -> ExprRes {
         Ok(self.level_instances.get(&self.active_level).unwrap().get_data())
     }
+
+    pub fn instance_at(&self, at: Coord) -> ExprRes {
+        Ok(match self.level_instances.get(&self.active_level).unwrap().instance_at(at) {
+            Some(i) => msValue::Val(VType::I(i as i64)),
+            None    => msValue::Null,
+        })
+    }
+
+    pub fn location_of(&self, id: i64) -> ExprRes {
+        Ok(match self.level_instances.get(&self.active_level).unwrap().location_of(id as u64) {
+            Some(l) => {
+                // TODO: create object
+                msValue::Null
+            },
+            None    => msValue::Null,
+        })
+    }
 }
 
 // ENTITY
@@ -307,8 +324,9 @@ impl Global {
 
     pub fn delete_entity(&mut self, id: i64) -> ExprRes {
         self.glob_instances.remove(&(id as u64));
-        self.level_instances.get_mut(&self.active_level).unwrap()
-            .remove_instance(id as u64);
+        let level = self.level_instances.get_mut(&self.active_level).unwrap();
+        level.remove_instance(id as u64);
+        level.despawn_instance(id as u64);
         Ok(msValue::Null)
     }
 
@@ -325,7 +343,7 @@ impl Global {
 // LEVEL MAP
 impl Global {
     pub fn fill_tiles(&mut self, tile_name: &str, tl: Coord, br: Coord) -> ExprRes {
-        let mut level = self.level_instances.get_mut(&self.active_level).unwrap();
+        let level = self.level_instances.get_mut(&self.active_level).unwrap();
         let tile = level.get_tile_id(tile_name).unwrap();
         let y_start = cmp::min(tl.1, br.1);
         let x_start = cmp::min(tl.0, br.0);
@@ -341,7 +359,7 @@ impl Global {
     }
 
     pub fn draw_line(&mut self, tile_name: &str, s: Coord, e: Coord) -> ExprRes {
-        let mut level = self.level_instances.get_mut(&self.active_level).unwrap();
+        let level = self.level_instances.get_mut(&self.active_level).unwrap();
         let tile = level.get_tile_id(tile_name).unwrap();
         let y_start = cmp::min(s.1, e.1);
         let x_start = cmp::min(s.0, e.0);
@@ -361,6 +379,18 @@ impl Global {
             level.set_tile(tile, (x,y));
         }
         Ok(msValue::Null)
+    }
+
+    pub fn spawn_entity(&mut self, entity: i64, loc: Coord) -> ExprRes {
+        let level = self.level_instances.get_mut(&self.active_level).unwrap();
+        let spawned = level.spawn_instance(entity as u64, loc);
+        Ok(msValue::Val(VType::B(spawned)))
+    }
+
+    pub fn despawn_entity(&mut self, entity: i64) -> ExprRes {
+        let level = self.level_instances.get_mut(&self.active_level).unwrap();
+        let despawned = level.despawn_instance(entity as u64);
+        Ok(msValue::Val(VType::B(despawned)))
     }
 }
 
