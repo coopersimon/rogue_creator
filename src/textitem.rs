@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub enum TextColour {
     Default,
     Black,
@@ -30,6 +31,7 @@ impl TextColour {
     }
 }
 
+#[derive(Clone)]
 pub enum TextOption {
     Bold,
     Blinking,
@@ -46,6 +48,7 @@ impl TextOption {
     }
 }
 
+#[derive(Clone)]
 pub struct TextItem {
     pub text: String,
     pub colour: TextColour,
@@ -66,5 +69,14 @@ impl TextItem {
         };
 
         item
+    }
+
+    pub fn new_tile(text: String) -> Self {
+        // TODO: error handling
+        TextItem::new(String::from_utf8(text.into_bytes()).unwrap(), Some(1))
+    }
+
+    pub fn as_char(&self) -> char {
+        self.text.chars().next().unwrap()
     }
 }

@@ -1,5 +1,7 @@
 use modscript::{Callable, Value, FuncMap, ExprRes, Error};
 
+use textitem::TextItem;
+
 use std::rc::Rc;
 
 pub struct Entity {
@@ -9,7 +11,7 @@ pub struct Entity {
     action: Callable,
     post_action: Callable,
     delete: Callable,
-    key: char,
+    tile: TextItem,
     source: Rc<FuncMap>,
 }
 
@@ -20,7 +22,7 @@ pub struct EntityInst {
 }
 
 impl Entity {
-    pub fn new(name: &str, key: char,
+    pub fn new(name: &str, tile: &str,
         init: Callable,
         pre_action: Callable,
         action: Callable,
@@ -31,7 +33,7 @@ impl Entity {
     {
         Entity {
             name: name.to_string(),
-            key: key,
+            tile: TextItem::new_tile(tile.to_string()),
             init: init,
             pre_action: pre_action,
             action: action,
@@ -40,15 +42,6 @@ impl Entity {
             source: source,
         }
     }
-
-    /*pub fn create_instance(&self, id: u64/*, inst_store: &InstanceStore*/) -> Result<EntityInst, String> {
-        let fields = self.init.call(&self.source, &[])?;
-        Ok(EntityInst {
-            entity: Rc::clone(self),
-            id: id,
-            fields: fields,
-        })
-    }*/
 }
 
 impl EntityInst {
@@ -75,6 +68,10 @@ impl EntityInst {
 
     pub fn get_data(&self) -> Value {
         self.fields.clone()
+    }
+
+    pub fn get_tile(&self) -> TextItem {
+        self.entity.tile.clone()
     }
 }
 

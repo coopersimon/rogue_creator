@@ -3,9 +3,11 @@ use modscript::{Value, Callable, FuncMap, Error};
 use Coord;
 use tile::{TileInfo, TileID};
 use super::entity::EntityInst;
+use textrender::MapCommand;
 
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::mpsc::Sender;
 
 pub struct Level {
     x: usize,
@@ -44,16 +46,6 @@ impl Level {
             source: source,
         }
     }
-
-    /*pub fn create_instance(&self) -> LevelInst {
-        LevelInst {
-            level: Rc::clone(self),
-            tile_map: vec![vec![self.tile_info.default_tile; self.x]; self.y],
-            local_instances: HashMap::new(),
-            instance_locs: HashMap::new(),
-            data: Value::Null,
-        }
-    }*/
 }
 
 impl LevelInst {
@@ -140,6 +132,22 @@ impl LevelInst {
 
     pub fn get_entity_data(&self, id: u64) -> Value {
         self.local_instances.get(&id).unwrap().get_data()
+    }
+
+    pub fn send_text_map_data(&self, sender: &Sender<MapCommand>, glob_instances: &HashMap<u64, EntityInst>) {
+        let tile_info = self.level.tile_info.clone();
+        sender.send(MapCommand::TileInfo(tile_info)).unwrap();
+        sender.send(MapCommand::TileData(self.tile_map.clone())).unwrap();
+        for (&k, &v) in self.instance_locs.iter() {
+            let tile = match self.local_instances.get(&k) {
+                Some(e) => e.get_tile(),
+                None    => match glob_instances.get(&k) {
+                    Some(e) => e.get_tile(),
+                    None    => panic!("Handle this error better"),
+                },
+            };
+            sender.send(MapCommand::Sprite(v.clone(), tile)).unwrap();
+        }
     }
 }
 

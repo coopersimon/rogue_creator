@@ -1,16 +1,18 @@
 use std::collections::HashMap;
+use textitem::TextItem;
 
 pub type TileID = u32;
 
 pub struct TileItem {
-    pub text: String,
+    pub text: TextItem,
     pub collide: bool,
 }
 
 impl TileItem {
+    // TODO: add colours, effects, error handling
     pub fn new(text: String, collide: bool) -> Self {
         TileItem {
-            text: String::from_utf8(text.into_bytes()).unwrap(),
+            text: TextItem::new_tile(text),
             collide: collide,
         }
     }

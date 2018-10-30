@@ -114,7 +114,7 @@ impl Global {
             for (ref name, ref ent) in entity_data["entities"].as_object().unwrap().iter() {
                 self.entities.insert(name.to_string(), Rc::new(Entity::new(
                     &name,
-                    ent["key"].as_str().unwrap().chars().next().unwrap(),
+                    ent["tile"].as_str().unwrap(),
                     eval_snippet(&packs, ent.get("init"), &self.source).unwrap(),
                     eval_snippet(&packs, ent.get("pre_action"), &self.source).unwrap(),
                     eval_snippet(&packs, ent.get("action"), &self.source).unwrap(),
@@ -294,7 +294,7 @@ impl Global {
 
     pub fn location_of(&self, id: i64) -> ExprRes {
         Ok(match self.level_instances.get(&self.active_level).unwrap().location_of(id as u64) {
-            Some(l) => {
+            Some(_l) => {
                 // TODO: create object
                 msValue::Null
             },

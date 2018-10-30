@@ -29,21 +29,21 @@
             "action": null,
             "post_action": "p::warrior_post",
             "delete": "p::delete",
-            "key": "@"
+            "tile": "@"
         },
         "rogue": {
             "type": "player",
             "init": "p::rogue_init",
             "post_action": "p::rogue_post",
             "delete": "p::delete",
-            "key": "@"
+            "tile": "@"
         },
         "mage": {
             "type": "player",
             "init": "p::mage_init",
             "post_action": "p::mage_post",
             "delete": "p::delete",
-            "key": "@"
+            "tile": "@"
         }
     }
 }

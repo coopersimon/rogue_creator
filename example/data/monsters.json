@@ -15,12 +15,11 @@
     "entity": [
         {
             "name": "goblin",
-            "id": 200,
             "type": "monster",
             "init": "scr/monster.scr:goblin_init()",
             "action": "scr/monster.scr:monster_action()",
             "delete": "scr/monster.scr:monster_delete()",
-            "key": "g"
+            "tile": "g"
         }
     ]
 }
