@@ -38,7 +38,7 @@ pub struct RenderData {
 }
 
 impl RenderData {
-    // Todo: make channels inside constructor?
+    // TODO: make channels inside constructor?
     pub fn new(recv: Receiver<RenderCommand>, map_recv: Receiver<MapCommand>, printbox_recv: Receiver<PrintCommand>) -> Self {
         RenderData {
             lib_recv: recv,

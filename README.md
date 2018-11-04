@@ -4,6 +4,26 @@ Roguelike engine.
 
 Note that all of the below may not be 100% correct.
 
+## Dev notes and TODOs:
+* Do control library (end game, wait)
+* Inputs, input mapping
+* Text object, colours, effects
+* Global database
+* Sub objects
+* More map display functions / reading map functions
+* Actions (and pre- and post- actions)
+* Delete calling
+* More map drawing functions (fill area?)
+* Internal: split up the global object a bit.
+
+### Longer term:
+* Real time ticking option
+* Tile based 2d graphics
+* Multithreading
+* Sounds
+* Events
+
+
 ## JSON
 
 RC uses JSON files for config. RC uses a `*.hub.json` file to load the game.
@@ -44,9 +64,9 @@ The input command calls a script which does some sort of action. This action may
 
 ## Scripts
 
-RC extensively makes use of a proprietary scripting language (similar to JS).
+RC extensively makes use of my [modscript](https://github.com/coopersimon/modscript) scripting language (similar to JS).
 
-Below a brief documentation can be found.
+Some object formats are used for engine functions. These are listed below.
 
 ### String Object
 The string object can be used when visual formatting is desired. It is set up as below:
@@ -61,63 +81,6 @@ The string object can be used when visual formatting is desired. It is set up as
 
 #### Options
 
-### Types
-
-RC is dynamically typed for in-script variables, however json declared variables are statically typed. The types that exist are:
-* Integer
-* Coord (pair): `<x,y>`
-* Float
-* Text
-* Bool
-* List(type)
-* Entity
-* Level (?)
-* object (instead of entity and level?)
-
-New variables are declared with `var`. Entities cannot be declared in-script, these must be declared in json.
-
-List components can be accessed with `\[\]` square brackets. Entity components can be accessed with the `.` dot.
-
-`level` can be used to access the current level. Level objects act similarly to entities.
-
-#### Type functions
-
-Certain types have core functions that can be called with the `->` operator. They are listed for each type below.
-
-##### Integer
-* `to_text()`: Returns as text. Implicitly called when added to a text variable.
-* `to_float()`: Returns as float. Implicitly called when added to a float variable.
-* `abs()`: Returns absolute value.
-
-##### Coord
-* `x()`: Returns x coord as integer.
-* `y()`: Returns y coord as integer.
-
-##### Float
-* `to_text()`: Returns as text. Implicitly called when added to a text variable.
-* `ceiling()`: Rounds up and returns as integer.
-* `floor()`: Rounds down and returns as integer.
-* `round()`: Rounds up if fractional part is >= 0.5, rounds down otherwise, and returns as integer.
-* `is_nan()`: Returns true if number is NaN.
-
-##### Text
-* `to_int()`: Returns as integer if possible. Crashes otherwise.
-* `to_float()`: Returns as float if possible. Crashes otherwise.
-* `len()`: Returns length of text string.
-
-##### List
-* `append(var)`: Appends `var` to the list. Modifies list in-place.
-* `concat(list)`: Appends the entirety of `list` to the list. Modifies list in-place.
-* `len()`: Returns length of list.
-* `type()`: Returns type of internal data as text.
-
-##### Entity
-* `action()`: Runs pre-action, then action, then post-action scripts as defined in json.
-* `init()`: Re-initialises entity.
-* `set_action(text)`: Sets the action function, using "text" as a script.
-* `clone()`: Clones the entity and returns a handle to the new entity. Adds instance to dynamic instance list if dynamic.
-* `type()`: Returns type of entity as text.
-* `name()`: Returns entity name as text.
 
 ### Functions
 
@@ -131,8 +94,6 @@ func function_name(argument_1, argument_2) {
 ```
 
 Functions can be called from a different package by adding the following statement to the top of a file or function: `import package_name as id;`. Then, functions can be called as follows: `id::function_name()`. `package_name` can be an engine function, or a string which contains the file location, e.g. `"path/to/file.scr"`. The file path is rooted at the location of the .hub.json file.
-
-Alternatively, they can be called from an engine package by using the `:` specifier: `:lib_name:function_name();`.
 
 There are a number of engine functions which can be called. They exist in different packages which must be `import`ed.
 
@@ -189,7 +150,8 @@ More (to do with colouring text, centering text etc) will be coming soon.
 ##### Flow control: control
 * `wait(integer)`: Waits "integer" milliseconds.
 * `exit()`: Exits script execution engine and returns to last JSON call.
-* `end_game()`: Runs 'end' script. Once 'end' script returns, the game ends and engine closes.
+* `end_game()`: Runs 'end' script.
+* `terminate_game()`: Closes the engine.
 
 ##### Global data access: glob
 * `obj()`: gets a mutable reference to the global object.

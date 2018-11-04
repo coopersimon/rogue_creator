@@ -85,8 +85,6 @@ impl Render for Map {
         self.process_commands();
 
         let default_tile = TextItem::new_tile(' '.to_string());
-        let x_offset = self.display_top_left.0;
-        let y_offset = self.display_top_left.1;
 
         for y in self.display_top_left.1..self.display_bottom_right.1 {
             for x in self.display_top_left.0..self.display_bottom_right.0 {
@@ -95,7 +93,10 @@ impl Render for Map {
                 } else {
                     &default_tile
                 };
-                w.mvaddch((top_left.1 + y) as i32, (top_left.0 + x) as i32, text.as_char());
+
+                if ((top_left.1 + y) <= bottom_right.1) && ((top_left.0 + x) <= bottom_right.0) {
+                    w.mvaddch((top_left.1 + y) as i32, (top_left.0 + x) as i32, text.as_char());
+                }
             }
         }
 
@@ -106,7 +107,10 @@ impl Render for Map {
                 } else {
                     &default_tile
                 };
-                w.mvaddch((top_left.1 + c.1) as i32, (top_left.0 + c.0) as i32, text.as_char());
+
+                if ((top_left.1 + c.1) <= bottom_right.1) && ((top_left.0 + c.0) <= bottom_right.0) {
+                    w.mvaddch((top_left.1 + c.1) as i32, (top_left.0 + c.0) as i32, text.as_char());
+                }
             }
         }
     }

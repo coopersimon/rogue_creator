@@ -1,4 +1,4 @@
-use modscript::{PackageRoot, ExprRes, Value, VType, mserr, Type, RunCode};
+use modscript::{PackageRoot, ExprRes, Value, mserr, Type, RunCode};
 use global::Global;
 use super::to_coord;
 

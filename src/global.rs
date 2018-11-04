@@ -9,6 +9,7 @@ use super::entity::{Entity, EntityInst};
 use super::level::{Level, LevelInst};
 use super::layout::Layout;
 use super::tile::{TileItem, TileInfo};
+use super::textrender::MapCommand;
 use Coord;
 
 use std::collections::HashMap;
@@ -16,6 +17,7 @@ use std::rc::Rc;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::cmp;
+use std::sync::mpsc::Sender;
 
 pub struct Global {
     // Code
@@ -238,6 +240,12 @@ impl Global {
 
     pub fn run_input(&self, /*current_layout: &str, */key: char) -> ExprRes {
         self.layouts.get(&self.current_layout).expect("Unrecognised layout.").run_input(key)
+    }
+
+    pub fn send_map_data(&self, sender: &Sender<MapCommand>) {
+        let level = self.level_instances.get(&self.active_level).unwrap();
+
+        level.send_text_map_data(sender, &self.glob_instances);
     }
 
     pub fn init(&self) -> ExprRes {

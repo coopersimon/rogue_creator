@@ -22,16 +22,23 @@ use std::sync::mpsc::channel;
 
 pub type Coord = (usize, usize);
 
+pub enum MainCommand {
+    EndGame,
+    Terminate,
+}
+
 fn main() {
     // init graphics, loading screen
 
     // Channels and objects
     let (s_rend, r_rend) = channel();
     let (s_pbox, r_pbox) = channel();
-    let (s_map, r_map) = channel();
+    let (s_map,  r_map)  = channel();
+    let (s_main, r_main) = channel();
+
+    let map_sender = s_map.clone();
 
     let glob = Rc::new(RefCell::new(global::Global::new()));
-    //let state = Rc::new(RefCell::new(state::State::new()));
 
     // init libraries
     Rc::get_mut(&mut glob.borrow_mut().source).unwrap()
@@ -50,6 +57,8 @@ fn main() {
         .attach_package(lib::map::NAME, lib::map::call_ref(s_map));
     Rc::get_mut(&mut glob.borrow_mut().source).unwrap()
         .attach_package(lib::makemap::NAME, lib::makemap::call_ref(glob.clone()));
+    Rc::get_mut(&mut glob.borrow_mut().source).unwrap()
+        .attach_package(lib::control::NAME, lib::control::call_ref(s_main));
 
 
     // TODO: get from arg
@@ -64,11 +73,20 @@ fn main() {
 
     // run
     loop {
+        glob.borrow().send_map_data(&map_sender);
         renderer.render(&mut window);
         match window.getch() {
             Some(Input::Character(c)) => {glob.borrow().run_input(c).unwrap();},
             Some(_) => (), // TODO: special char support
             None => (),
+        }
+        // check outputs
+        let mut iter = r_main.iter();
+        while let Some(c) = iter.next() {
+            match c {
+                MainCommand::EndGame => glob.borrow().end().unwrap(),
+                MainCommand::Terminate => break,
+            };
         }
     }
 

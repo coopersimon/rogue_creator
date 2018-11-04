@@ -12,11 +12,36 @@ pub mod entity;
 pub mod pbox;
 pub mod map;
 pub mod makemap;
+pub mod control;
 
 // Converts objects/pairs to Coord
 fn to_coord(val: &Value) -> Result<Coord, Error> {
     use self::Value::*;
     use self::VType::*;
+
+    fn make_coord(x_val: &Value, y_val: &Value) -> Result<Coord, Error> {
+        let x = match x_val {
+            Val(I(i))   => i.clone() as usize,
+            Val(F(f))   => f.round() as usize,
+            Ref(ref r)  => match *r.borrow() {
+                I(i)    => i as usize,
+                F(f)    => f.round() as usize,
+                _       => return Err(Error::new(Type::RunTime(RunCode::TypeError))),
+            },
+            _           => return Err(Error::new(Type::RunTime(RunCode::TypeError))),
+        };
+        let y = match y_val {
+            Val(I(i))   => i.clone() as usize,
+            Val(F(f))   => f.round() as usize,
+            Ref(ref r)  => match *r.borrow() {
+                I(i)    => i as usize,
+                F(f)    => f.round() as usize,
+                _       => return Err(Error::new(Type::RunTime(RunCode::TypeError))),
+            },
+            _           => return Err(Error::new(Type::RunTime(RunCode::TypeError))),
+        };
+        Ok((x, y))
+    }
 
     match val {
         Obj(ref o)  => {
@@ -29,27 +54,14 @@ fn to_coord(val: &Value) -> Result<Coord, Error> {
                 Some(y) => y,
                 None    => return Err(Error::new(Type::RunTime(RunCode::TypeError))),
             };
-            let x = match x_val {
-                Val(I(i))   => i.clone() as usize,
-                Val(F(f))   => f.round() as usize,
-                Ref(ref r)  => match *r.borrow() {
-                    I(i)    => i as usize,
-                    F(f)    => f.round() as usize,
-                    _       => return Err(Error::new(Type::RunTime(RunCode::TypeError))),
-                },
-                _           => return Err(Error::new(Type::RunTime(RunCode::TypeError))),
-            };
-            let y = match y_val {
-                Val(I(i))   => i.clone() as usize,
-                Val(F(f))   => f.round() as usize,
-                Ref(ref r)  => match *r.borrow() {
-                    I(i)    => i as usize,
-                    F(f)    => f.round() as usize,
-                    _       => return Err(Error::new(Type::RunTime(RunCode::TypeError))),
-                },
-                _           => return Err(Error::new(Type::RunTime(RunCode::TypeError))),
-            };
-            Ok((x, y))
+            make_coord(x_val, y_val)
+        },
+        List(ref l) => {
+            let l = l.borrow();
+            if l.len() < 2 {
+                return Err(Error::new(Type::RunTime(RunCode::TypeError)));
+            }
+            make_coord(&l[0], &l[1])
         },
         _           => Err(Error::new(Type::RunTime(RunCode::TypeError))),
     }
