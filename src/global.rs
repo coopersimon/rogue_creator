@@ -3,7 +3,7 @@ use modscript;
 use modscript::Value as msValue;
 use serde_json;
 use serde_json::Value as jsonValue;
-use modscript::{Callable, FuncMap, expr_from_text, ExprRes, VType};
+use modscript::{ScriptExpr, FuncMap, expr_from_text, ExprRes, VType, mserr};
 
 use super::entity::{Entity, EntityInst};
 use super::level::{Level, LevelInst};
@@ -24,9 +24,9 @@ pub struct Global {
     pub source: Rc<FuncMap>,
 
     // Main functions
-    init: Callable,
-    tick: Callable,
-    end: Callable,
+    init: ScriptExpr,
+    tick: ScriptExpr,
+    end: ScriptExpr,
 
     // Constructors
     entities: HashMap<String, Rc<Entity>>,
@@ -46,6 +46,7 @@ pub struct Global {
 
     id_count: u64,
     active_level: u64,
+    active_entity: u64,
 }
 
 impl Global {
@@ -53,9 +54,9 @@ impl Global {
         Global {
             source: Rc::new(FuncMap::new()),
 
-            init: Callable::new(None),
-            tick: Callable::new(None),
-            end: Callable::new(None),
+            init: ScriptExpr::new(None),
+            tick: ScriptExpr::new(None),
+            end: ScriptExpr::new(None),
 
             entities: HashMap::new(),
             levels: HashMap::new(),
@@ -68,6 +69,7 @@ impl Global {
 
             id_count: 0,
             active_level: 0,
+            active_entity: 0,
         }
     }
 
@@ -85,6 +87,8 @@ impl Global {
 
         let root_dir = hub_file_name.split('/').next().unwrap().to_owned() + "/";
 
+        println!("root: {}", root_dir);
+
         let hub_file = read_file(hub_file_name);
         let hub_data: jsonValue = serde_json::from_str(&hub_file)?;
 
@@ -92,7 +96,7 @@ impl Global {
         for src in hub_data["source"].as_array().unwrap().iter() {
             let package_name = src.as_str().expect("Source file not a string!");
             let package = modscript::package_from_file(&(root_dir.to_owned() + package_name)).unwrap();
-            Rc::get_mut(&mut self.source).unwrap().attach_package(package_name, package.call_ref());
+            Rc::get_mut(&mut self.source).unwrap().attach_package(&(root_dir.to_owned() + package_name), package.call_ref());
         }
 
         /* ENTITIES */
@@ -106,7 +110,7 @@ impl Global {
                     let mut p = Vec::new();
                     for (ref k, ref v) in i.as_object().unwrap().iter() {
                         let value = v.as_str().unwrap();
-                        p.push((k.to_string(), value.to_string()));
+                        p.push((value.to_string(), root_dir.to_owned() + k));
                     }
                     p
                 },
@@ -118,7 +122,6 @@ impl Global {
                     &name,
                     ent["tile"].as_str().unwrap(),
                     eval_snippet(&packs, ent.get("init"), &self.source).unwrap(),
-                    eval_snippet(&packs, ent.get("pre_action"), &self.source).unwrap(),
                     eval_snippet(&packs, ent.get("action"), &self.source).unwrap(),
                     eval_snippet(&packs, ent.get("post_action"), &self.source).unwrap(),
                     eval_snippet(&packs, ent.get("delete"), &self.source).unwrap(),
@@ -139,7 +142,7 @@ impl Global {
                     let mut p = Vec::new();
                     for (ref k, ref v) in i.as_object().unwrap().iter() {
                         let value = v.as_str().unwrap();
-                        p.push((k.to_string(), value.to_string()));
+                        p.push((value.to_string(), root_dir.to_owned() + k));
                     }
                     p
                 },
@@ -184,7 +187,7 @@ impl Global {
                     let mut p = Vec::new();
                     for (ref k, ref v) in i.as_object().unwrap().iter() {
                         let value = v.as_str().unwrap();
-                        p.push((k.to_string(), value.to_string()));
+                        p.push((value.to_string(), root_dir.to_owned() + k));
                     }
                     p
                 },
@@ -221,7 +224,7 @@ impl Global {
                 let mut p = Vec::new();
                 for (ref k, ref v) in i.as_object().unwrap().iter() {
                     let value = v.as_str().unwrap();
-                    p.push((k.to_string(), value.to_string()));
+                    p.push((value.to_string(), root_dir.to_owned() + k));
                 }
                 p
             },
@@ -242,22 +245,31 @@ impl Global {
         self.layouts.get(&self.current_layout).expect("Unrecognised layout.").run_input(key)
     }
 
-    pub fn send_map_data(&self, sender: &Sender<MapCommand>) {
-        let level = self.level_instances.get(&self.active_level).unwrap();
+    pub fn prepare_render(&self, sender: &Sender<MapCommand>) {
+        let level = self.level_instances.get(&self.active_level).expect("No active level");
 
         level.send_text_map_data(sender, &self.glob_instances);
+        self.layouts.get(&self.current_layout).expect("Unrecognised layout.").render().unwrap();
     }
 
-    pub fn init(&self) -> ExprRes {
-        self.init.call(&self.source, &[])
+    pub fn set_active_entity(&mut self, id: u64) {
+        self.active_entity = id;
+    }
+
+    pub fn clear_active_entity(&mut self) {
+        self.active_entity = 0;
+    }
+
+    pub fn init(&mut self) {
+        self.glob_obj = self.init.run(&self.source).unwrap();
     }
 
     pub fn tick(&self) -> ExprRes {
-        self.tick.call(&self.source, &[])
+        self.tick.run(&self.source)
     }
 
     pub fn end(&self) -> ExprRes {
-        self.end.call(&self.source, &[])
+        self.end.run(&self.source)
     }
 }
 
@@ -273,7 +285,12 @@ impl Global {
     }
 
     pub fn delete_level(&mut self, id: i64) -> ExprRes {
-        self.level_instances.remove(&(id as u64));
+        let id = id as u64;
+        match self.level_instances.get(&id) {
+            Some(l) => {l.delete()?;},
+            None    => (),
+        }
+        self.level_instances.remove(&id);
         Ok(msValue::Null)
     }
 
@@ -331,10 +348,16 @@ impl Global {
     }
 
     pub fn delete_entity(&mut self, id: i64) -> ExprRes {
-        self.glob_instances.remove(&(id as u64));
+        let id = id as u64;
+        match self.glob_instances.get(&id) {
+            Some(i) => {i.delete()?;},
+            None    => (),
+        }
+        self.glob_instances.remove(&id);
+
         let level = self.level_instances.get_mut(&self.active_level).unwrap();
-        level.remove_instance(id as u64);
-        level.despawn_instance(id as u64);
+        level.remove_instance(id)?;
+        level.despawn_instance(id);
         Ok(msValue::Null)
     }
 
@@ -346,6 +369,39 @@ impl Global {
                               .get_entity_data(id as u64)),
         }
     }
+
+    pub fn active_entity_obj(&self) -> ExprRes {
+        if self.active_entity != 0 {
+            self.entity_obj(self.active_entity as i64)
+        } else {
+            Ok(msValue::Null) // or custom err?
+        }
+    }
+
+    pub fn run_actions(&mut self) -> ExprRes {
+        // run all entities actions
+        // all entities post-actions
+        Ok(msValue::Null)
+    }
+
+    // TODO: below should accept closure or callable as argument
+    /*pub fn run_actions_ordered(&mut self, comp: &msValue) -> ExprRes {
+        use modscript::Value::*;
+        let compare = |a,b| match *comp {
+            Func(ref p, ref n)      => {
+                self.source.call_fn(&p.borrow(), &n.borrow(), &vec![a,b])
+            },
+            Closure(ref f, ref a)   => {
+                f.borrow().call(&vec![a,b], &*self.source, Some(a.borrow()))
+            },
+            _ => return mserr(Type::RunTime(RunCode::TypeError)),
+        };
+
+        // sort all entities
+        // run actions
+        // run post-actions
+        Ok(msValue::Null)
+    }*/
 }
 
 // LEVEL MAP
@@ -413,14 +469,13 @@ fn read_file(file_name: &str) -> String {
     contents
 }
 
-fn eval_snippet(imports: &[(String, String)], script: Option<&jsonValue>, libs: &FuncMap) -> Result<Callable, modscript::Error> {
+fn eval_snippet(imports: &[(String, String)], script: Option<&jsonValue>, libs: &FuncMap) -> Result<ScriptExpr, modscript::Error> {
     match script {
         Some(s) => {
             let script_str = s.as_str().unwrap();
             let expr = expr_from_text(imports, script_str)?;
-            let val = expr.run(libs)?;
-            Ok(Callable::new(Some(val)))
+            Ok(expr)
         },
-        None => Ok(Callable::new(None)),
+        None => Ok(ScriptExpr::new(None)),
     }
 }

@@ -1,4 +1,4 @@
-use modscript::{Value, Callable, FuncMap, Error};
+use modscript::{Value, ScriptExpr, FuncMap, Error, ExprRes};
 
 use Coord;
 use tile::{TileInfo, TileID};
@@ -13,8 +13,8 @@ pub struct Level {
     x: usize,
     y: usize,
     tile_info: Rc<TileInfo>,
-    init: Callable,
-    delete: Callable,
+    init: ScriptExpr,
+    delete: ScriptExpr,
     source: Rc<FuncMap>,
 }
 
@@ -32,8 +32,8 @@ impl Level {
     pub fn new(x_size: u64,
         y_size: u64,
         tile_info: Rc<TileInfo>,
-        init: Callable,
-        delete: Callable,
+        init: ScriptExpr,
+        delete: ScriptExpr,
         source: Rc<FuncMap>
         ) -> Self
     {
@@ -60,8 +60,12 @@ impl LevelInst {
     }
 
     pub fn init(&mut self) -> Result<(), Error> {
-        self.data = self.level.init.call(&self.level.source, &[])?;
+        self.data = self.level.init.run(&self.level.source)?;
         Ok(())
+    }
+
+    pub fn delete(&self) -> ExprRes {
+        self.level.delete.run(&self.level.source)
     }
 
     // TODO: Error handling here?
@@ -87,8 +91,13 @@ impl LevelInst {
         self.local_instances.insert(id, instance);
     }
 
-    pub fn remove_instance(&mut self, id: u64) {
+    pub fn remove_instance(&mut self, id: u64) -> Result<(), Error> {
+        match self.local_instances.get(&id) {
+            Some(i) => {i.delete()?;},
+            None    => (),
+        }
         self.local_instances.remove(&id);
+        Ok(())
     }
     /* trait InstanceStore */
 
@@ -148,11 +157,5 @@ impl LevelInst {
             };
             sender.send(MapCommand::Sprite(v.clone(), tile)).unwrap();
         }
-    }
-}
-
-impl Drop for LevelInst {
-    fn drop(&mut self) {
-        self.level.delete.call(&self.level.source, &[self.data.clone()]).unwrap();
     }
 }

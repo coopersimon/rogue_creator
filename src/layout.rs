@@ -1,18 +1,18 @@
 // Layout objects
-use modscript::{Callable, FuncMap, ExprRes, Value};
+use modscript::{ScriptExpr, FuncMap, ExprRes, Value};
 
 use std::collections::HashMap;
 use std::rc::Rc;
 
 pub struct Layout {
     // inputs: HashMap<_input, Script[/Expr]
-    inputs: HashMap<char, Callable>,
-    render: Callable,
+    inputs: HashMap<char, ScriptExpr>,
+    render: ScriptExpr,
     source: Rc<FuncMap>,
 }
 
 impl Layout {
-    pub fn new(inputs: HashMap<char, Callable>, render: Callable, source: Rc<FuncMap>) -> Self {
+    pub fn new(inputs: HashMap<char, ScriptExpr>, render: ScriptExpr, source: Rc<FuncMap>) -> Self {
         Layout {
             inputs: inputs,
             render: render,
@@ -21,12 +21,12 @@ impl Layout {
     }
 
     pub fn render(&self) -> ExprRes {
-        self.render.call(&self.source, &[])
+        self.render.run(&self.source)
     }
 
     pub fn run_input(&self, input: char) -> ExprRes {
         match self.inputs.get(&input) {
-            Some(c) => c.call(&self.source, &[]),
+            Some(c) => c.run(&self.source),
             None => Ok(Value::Null),
         }
     }

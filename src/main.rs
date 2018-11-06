@@ -62,9 +62,10 @@ fn main() {
 
 
     // TODO: get from arg
-    let hub_file = "example/rogue.hub.json";
+    let hub_file = "rogue/hub.json";
 
     glob.borrow_mut().init_game(hub_file).unwrap();
+    glob.borrow_mut().init();
 
     // TODO: get from hub file
     let mut window = init_terminal("Rogue");
@@ -73,7 +74,7 @@ fn main() {
 
     // run
     loop {
-        glob.borrow().send_map_data(&map_sender);
+        glob.borrow().prepare_render(&map_sender);
         renderer.render(&mut window);
         match window.getch() {
             Some(Input::Character(c)) => {glob.borrow().run_input(c).unwrap();},

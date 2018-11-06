@@ -26,40 +26,19 @@ Note that all of the below may not be 100% correct.
 
 ## JSON
 
-RC uses JSON files for config. RC uses a `*.hub.json` file to load the game.
+RC uses JSON files for config. RC uses a `hub.json` file to load the game.
+
+Throughout there are multiple places where either data or script snippets are defined. Script snippets are an expression which returns a value. These values that are returned may or may not be used (more details below).
 
 ## Engine Workings
+The cycle:
+* First, `init` in the `hub.json` file is called. This **must** be defined. This **must** call the `set_layout` function to set the initial layout. It _should_ setup a level and load it. The value that is returned from this is used as the global object, which can be accessed via the `glob::obj` function at any time later.
+* After this, the `render` script in the chosen layout is called. Every layout **must** define a `render` function. It doesn't have to do anything, but it _should_ call functions from the `txtrend` package.
+* Next, an input key is read from the user. The chosen layout maps input keys to scripts. A `default` can be set for any key that isn't explicitly defined. These scripts _can_ call the `control::tick` function, which runs the `tick` script defined in the hub file after the key script returns.
+* The `tick` script runs if necessary, then the game is re-rendered and then awaits more input. This loop continues until `control::terminate_game` is called.
 
-`glob` can be used throughout to access the global object. `.` is used to access individual data inside. Although the components must be declared in the hub file, it is read/write and the values begin uninitialised.
-
-`data` can be used throughout to access the global read-only data. `.` is used to access individual data inside. This is specified in .json files and can only be read from.
-
-In addition to `glob`, `data`, and local variables inside functions, there is always a level stack. The level stack can be accessed with `level` and `.`.
-
-If a script is triggered by an entity function (`init`, `action`, `delete`), `this` can be used to access the current entity. It will equal `null` otherwise.
-
-RC follows a predictable cycle:
-* When the game begins the 'init' script is called (specified in hub file). This will probably initialise the `glob` object. It MUST initialise a layout, and usually a level too.
-* Next, the `render` function is called (defined by the current layout).
-* Next, if in ticking mode, the `tick` function will be called, then input will be awaited for a short time (depending on frame-rate). If in normal mode, input will be awaited depending on the input specified in the layout.
-* When either script returns, render is re-called.
-
-`tick` is often used to advance a cycle even when not in ticking mode.
-
-Render can be called at any point, for example if one wants to show text changing mid-tick.
-
-## Making Level:
-Tiles must be defined. The level map can be made from these tiles.
-
-Init the level, then create the map from the special functions (in `makemap`). Once the level tiles are placed, entites can be spawned in.
-
-Entities must be initialised, then they can be stored wherever. Most likely, the only persistent entity will be the player and whatever they are holding: store these persistent entities in the global object. When entities are spawned into a level they are stored inside the level too - along with their local coordinates. The level owns an entity's location, and a reference to the rest of the entity's data.
-
-Entities are spawned as active or static, which determines whether they are called in the `tick` command or not.
-
-Once everything is spawned into the level, input is awaited. Once input is put in, it is translated to an input command (i.e., the "up" arrow key is translated to "move_up").
-
-The input command calls a script which does some sort of action. This action may or may not call `tick` which will make all active entities take an action.
+### Making Level:
+TODO: Write about levels
 
 
 ## Scripts
@@ -100,7 +79,7 @@ There are a number of engine functions which can be called. They exist in differ
 #### Engine functions
 Each of the following functions are found inside the package noted. They must be imported before use.
 
-##### Entity manipulation: entity
+##### Entity manipulation: `entity`
 * `create_global(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the global instance list.
 * `create(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the level's instance list.
 * `delete(integer)`: Despawns instance (if spawned), runs its 'delete' script, and then removes altogether.
@@ -108,7 +87,7 @@ Each of the following functions are found inside the package noted. They must be
 * `data(integer)`: Gets a mutable reference to entity data (returned by init script).
 * `run_actions()`: Runs pre, action and post scripts for all instances in level instance list.
 
-##### Layout: txtrend
+##### Layout: `txtrend`
 The following should only be found in the `render` function (or sub-functions):
 * `place_print(coord, coord)`: Places print between screen coords specified. Also determines current size of print buffer.
 * `place_map(coord, coord)`: Places level map at screen coords specified. Level MUST be LOADED before this is called.
@@ -116,12 +95,12 @@ The following should only be found in the `render` function (or sub-functions):
 
 More (to do with colouring text, centering text etc) will be coming soon.
 
-##### Print box: pbox
+##### Print box: `pbox`
 * `print(text)`: Adds text to the print buffer, which can be displayed on screen. If the text is longer than the display length, it is split into multiple entries.
 * `next()`: Shows the next entry in the print buffer.
 * `clear()`: Clears entire print buffer and blanks.
 
-##### Map: map
+##### Map: `map`
 * `display(coord, coord)`: Selects what to show with `place_map`. (defaults to the whole map from top left)
 * `show_all()`: reveals entire map for rendering.
 * `hide_all()`: hides entire map so it isn't rendered.
@@ -130,7 +109,7 @@ More (to do with colouring text, centering text etc) will be coming soon.
 * `show_surround(coord)`: reveals the tiles around and including coord.
 * `hide_surround(coord)`: hides the tiles around and including coord.
 
-##### Level interaction: level
+##### Level interaction: `level`
 * `create(string)`: Creates level of name "text". Returns integer id to refer to the level with.
 * `delete(integer)`: Deletes level of id "integer", if it exists.
 * `load(integer)`: Makes the active level id "integer". Uses it to render the map, etc.
@@ -140,25 +119,26 @@ More (to do with colouring text, centering text etc) will be coming soon.
 * `instance_at(coord)`: Returns instance if one exists at coords specified. Returns null if nothing is at those coords.
 * `location_of(integer)`: Returns coord containing location of instance.
 
-##### Map creation: makemap
+##### Map creation: `makemap`
 * `fill_tile(string, coord, <coord>)`: Draw tiles between coords, or at first coord if second is not specified.
 * `draw_line(string, coord, coord)`: Draws a line between the coords.
 * `spawn(integer, coord)`: Spawns instance at coords specified. If not possible, then returns false. If successful, returns true.
 * `despawn(integer)`: Despawns instance, however keeps data so it can be re-spawned.
 * `set_entity_display(integer, text)`: Sets visuals for entity to the text object specified. Text contained must be a single character.
 
-##### Flow control: control
+##### Flow control: `control`
 * `wait(integer)`: Waits "integer" milliseconds.
 * `exit()`: Exits script execution engine and returns to last JSON call.
+* `tick()`: Calls the tick script after the key input has returned.
 * `end_game()`: Runs 'end' script.
 * `terminate_game()`: Closes the engine.
 
-##### Global data access: glob
+##### Global data access: `glob`
 * `obj()`: gets a mutable reference to the global object.
 * `data()`: gets a reference to the global database.
 * `set_layout(text)`: Changes active layout to "text", as defined in json. This MUST be called before the end of the `init` script.
 
-##### Mathematical: math
+##### Mathematical: `math`
 * `sin(n)`: Runs sin function on number.
 * `cos(n)`: Runs cos function on number.
 * `pow(b,e)`: Returns b raised to the power of e.
