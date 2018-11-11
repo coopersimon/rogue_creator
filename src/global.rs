@@ -9,50 +9,39 @@ use super::entity::{Entity, EntityInst};
 use super::level::{Level, LevelInst};
 use super::layout::Layout;
 use super::tile::{TileItem, TileInfo};
-use super::textrender::MapCommand;
+use super::error::{engerr, EngErr, RunCode};
 use Coord;
 
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::fs::File;
 use std::io::{BufReader, Read};
-use std::cmp;
 use std::sync::mpsc::Sender;
 
 pub struct Global {
     // Code
-    pub source: Rc<FuncMap>,
+    pub source: FuncMap,
 
     // Main functions
     init: ScriptExpr,
     tick: ScriptExpr,
     end: ScriptExpr,
 
-    // Constructors
-    entities: HashMap<String, Rc<Entity>>,
-    levels: HashMap<String, Rc<Level>>,
+    // Entity and level snippets
+    entities: HashMap<String, Entity>,
+    levels: HashMap<String, Level>,
 
     // Layout
     layouts: HashMap<String, Layout>,
 
     // Database
     // glob_data
-
-    // Mutable data
-    pub glob_obj: msValue,
-    pub current_layout: String,
-    pub glob_instances: HashMap<u64, EntityInst>,
-    pub level_instances: HashMap<u64, LevelInst>,
-
-    id_count: u64,
-    active_level: u64,
-    active_entity: u64,
 }
 
 impl Global {
     pub fn new() -> Self {
         Global {
-            source: Rc::new(FuncMap::new()),
+            source: FuncMap::new(),
 
             init: ScriptExpr::new(None),
             tick: ScriptExpr::new(None),
@@ -61,15 +50,6 @@ impl Global {
             entities: HashMap::new(),
             levels: HashMap::new(),
             layouts: HashMap::new(),
-
-            glob_obj: msValue::Null,
-            current_layout: String::new(),
-            glob_instances: HashMap::new(),
-            level_instances: HashMap::new(),
-
-            id_count: 0,
-            active_level: 0,
-            active_entity: 0,
         }
     }
 
@@ -96,7 +76,7 @@ impl Global {
         for src in hub_data["source"].as_array().unwrap().iter() {
             let package_name = src.as_str().expect("Source file not a string!");
             let package = modscript::package_from_file(&(root_dir.to_owned() + package_name)).unwrap();
-            Rc::get_mut(&mut self.source).unwrap().attach_package(&(root_dir.to_owned() + package_name), package.call_ref());
+            self.source.attach_package(&(root_dir.to_owned() + package_name), package.call_ref());
         }
 
         /* ENTITIES */
@@ -118,15 +98,14 @@ impl Global {
             };
 
             for (ref name, ref ent) in entity_data["entities"].as_object().unwrap().iter() {
-                self.entities.insert(name.to_string(), Rc::new(Entity::new(
-                    &name,
+                self.entities.insert(name.to_string(), Entity::new(
+                    /*&name,*/
                     ent["tile"].as_str().unwrap(),
                     eval_snippet(&packs, ent.get("init"), &self.source).unwrap(),
                     eval_snippet(&packs, ent.get("action"), &self.source).unwrap(),
                     eval_snippet(&packs, ent.get("post_action"), &self.source).unwrap(),
-                    eval_snippet(&packs, ent.get("delete"), &self.source).unwrap(),
-                    self.source.clone()
-                )));
+                    eval_snippet(&packs, ent.get("delete"), &self.source).unwrap()
+                ));
             }
         }
         /* ENTITIES */
@@ -164,14 +143,13 @@ impl Global {
             let tile_info = Rc::new(tile_info);
 
             for (ref name, ref lev) in level_data["levels"].as_object().unwrap().iter() {
-                self.levels.insert(name.to_string(), Rc::new(Level::new(
+                self.levels.insert(name.to_string(), Level::new(
                     lev["x"].as_u64().unwrap(),
                     lev["y"].as_u64().unwrap(),
                     tile_info.clone(),
                     eval_snippet(&packs, lev.get("init"), &self.source).unwrap(),
-                    eval_snippet(&packs, lev.get("delete"), &self.source).unwrap(),
-                    self.source.clone()
-                )));
+                    eval_snippet(&packs, lev.get("delete"), &self.source).unwrap()
+                ));
             }
         }
         /* LEVELS */
@@ -209,8 +187,7 @@ impl Global {
 
                 self.layouts.insert(name.to_string(), Layout::new(
                     inputs,
-                    eval_snippet(&packs, layout.get("render"), &self.source).unwrap(),
-                    self.source.clone()
+                    eval_snippet(&packs, layout.get("render"), &self.source).unwrap()
                 ));
             }
         }
@@ -241,27 +218,17 @@ impl Global {
         Ok(())
     }
 
-    pub fn run_input(&self, /*current_layout: &str, */key: char) -> ExprRes {
-        self.layouts.get(&self.current_layout).expect("Unrecognised layout.").run_input(key)
+    pub fn run_input(&self, current_layout: &str, key: char) -> ExprRes {
+        self.layouts.get(current_layout).expect("Unrecognised layout.").run_input(key, &self.source)
     }
 
-    pub fn prepare_render(&self, sender: &Sender<MapCommand>) {
-        let level = self.level_instances.get(&self.active_level).expect("No active level");
-
-        level.send_text_map_data(sender, &self.glob_instances);
-        self.layouts.get(&self.current_layout).expect("Unrecognised layout.").render().unwrap();
+    // run render
+    pub fn run_render(&self, current_layout: &str) -> ExprRes {
+        self.layouts.get(current_layout).expect("Unrecognised layout.").render(&self.source)
     }
 
-    pub fn set_active_entity(&mut self, id: u64) {
-        self.active_entity = id;
-    }
-
-    pub fn clear_active_entity(&mut self) {
-        self.active_entity = 0;
-    }
-
-    pub fn init(&mut self) {
-        self.glob_obj = self.init.run(&self.source).unwrap();
+    pub fn init(&self) -> ExprRes {
+        self.init.run(&self.source)
     }
 
     pub fn tick(&self) -> ExprRes {
@@ -271,192 +238,67 @@ impl Global {
     pub fn end(&self) -> ExprRes {
         self.end.run(&self.source)
     }
+
+    // call fns on these?
+    pub fn new_entity_instance(&self, name: &str) -> Result<EntityInst, modscript::Error> {
+        match self.entities.get(name) {
+            Some(e) => Ok(e.new_instance(name)),
+            None    => Err(engerr(EngErr::RunTime(RunCode::EntityClassNotFound))),
+        }
+    }
+
+    pub fn new_level_instance(&self, name: &str) -> Result<LevelInst, modscript::Error> {
+        match self.levels.get(name) {
+            Some(l) => Ok(l.new_instance()),
+            None    => Err(engerr(EngErr::RunTime(RunCode::LevelClassNotFound))),
+        }
+    }
+
+
+    pub fn level_init(&self, name: &str) -> ExprRes {
+        match self.levels.get(name) {
+            Some(l) => l.init(&self.source),
+            None    => Err(engerr(EngErr::RunTime(RunCode::LevelClassNotFound))), // critical?
+        }
+    }
+
+    pub fn level_delete(&self, name: &str) -> ExprRes {
+        match self.levels.get(name) {
+            Some(l) => l.delete(&self.source),
+            None    => Err(engerr(EngErr::RunTime(RunCode::LevelClassNotFound))), // critical?
+        }
+    }
+
+
+    pub fn entity_init(&self, name: &str) -> ExprRes {
+        match self.entities.get(name) {
+            Some(e) => e.init(&self.source),
+            None    => Err(engerr(EngErr::RunTime(RunCode::EntityClassNotFound))), // critical?
+        }
+    }
+
+    pub fn entity_action(&self, name: &str) -> ExprRes {
+        match self.entities.get(name) {
+            Some(e) => e.action(&self.source),
+            None    => Err(engerr(EngErr::RunTime(RunCode::EntityClassNotFound))), // critical?
+        }
+    }
+
+    pub fn entity_post_action(&self, name: &str) -> ExprRes {
+        match self.entities.get(name) {
+            Some(e) => e.post_action(&self.source),
+            None    => Err(engerr(EngErr::RunTime(RunCode::EntityClassNotFound))), // critical?
+        }
+    }
+
+    pub fn entity_delete(&self, name: &str) -> ExprRes {
+        match self.entities.get(name) {
+            Some(e) => e.delete(&self.source),
+            None    => Err(engerr(EngErr::RunTime(RunCode::EntityClassNotFound))), // critical?
+        }
+    }
 }
 
-// LEVEL
-impl Global {
-    pub fn create_level(&mut self, name: &str) -> ExprRes {
-        let level = self.levels.get(name).unwrap().clone();
-        let mut instance = LevelInst::new(level);
-        instance.init()?;
-        self.id_count += 1; // TODO (?): more robust id generation
-        self.level_instances.insert(self.id_count, instance);
-        Ok(msValue::Val(VType::I(self.id_count as i64)))
-    }
-
-    pub fn delete_level(&mut self, id: i64) -> ExprRes {
-        let id = id as u64;
-        match self.level_instances.get(&id) {
-            Some(l) => {l.delete()?;},
-            None    => (),
-        }
-        self.level_instances.remove(&id);
-        Ok(msValue::Null)
-    }
-
-    pub fn set_active_level(&mut self, id: i64) -> ExprRes {
-        self.active_level = id as u64;
-        Ok(msValue::Null)
-    }
-
-    pub fn clone_level(&mut self, id: i64) -> ExprRes {
-        self.id_count += 1;
-        let instance = self.level_instances.get(&(id as u64)).unwrap().clone();
-        self.level_instances.insert(self.id_count, instance);
-        Ok(msValue::Val(VType::I(self.id_count as i64)))
-    }
-
-    pub fn level_obj(&self) -> ExprRes {
-        Ok(self.level_instances.get(&self.active_level).unwrap().get_data())
-    }
-
-    pub fn instance_at(&self, at: Coord) -> ExprRes {
-        Ok(match self.level_instances.get(&self.active_level).unwrap().instance_at(at) {
-            Some(i) => msValue::Val(VType::I(i as i64)),
-            None    => msValue::Null,
-        })
-    }
-
-    pub fn location_of(&self, id: i64) -> ExprRes {
-        Ok(match self.level_instances.get(&self.active_level).unwrap().location_of(id as u64) {
-            Some(_l) => {
-                // TODO: create object
-                msValue::Null
-            },
-            None    => msValue::Null,
-        })
-    }
-}
-
-// ENTITY
-impl Global {
-    pub fn create_glob_entity(&mut self, name: &str) -> ExprRes {
-        let entity = self.entities.get(name).unwrap().clone();
-        let instance = EntityInst::new(entity)?;
-        self.id_count += 1; // TODO (?): more robust id generation
-        self.glob_instances.insert(self.id_count, instance);
-        Ok(msValue::Val(VType::I(self.id_count as i64)))
-    }
-
-    pub fn create_local_entity(&mut self, name: &str) -> ExprRes {
-        let entity = self.entities.get(name).unwrap().clone();
-        let instance = EntityInst::new(entity)?;
-        self.id_count += 1; // TODO (?): more robust id generation
-        self.level_instances.get_mut(&self.active_level).unwrap()
-            .add_instance(self.id_count, instance);
-        Ok(msValue::Val(VType::I(self.id_count as i64)))
-    }
-
-    pub fn delete_entity(&mut self, id: i64) -> ExprRes {
-        let id = id as u64;
-        match self.glob_instances.get(&id) {
-            Some(i) => {i.delete()?;},
-            None    => (),
-        }
-        self.glob_instances.remove(&id);
-
-        let level = self.level_instances.get_mut(&self.active_level).unwrap();
-        level.remove_instance(id)?;
-        level.despawn_instance(id);
-        Ok(msValue::Null)
-    }
-
-    pub fn entity_obj(&self, id: i64) -> ExprRes {
-        match self.glob_instances.get(&(id as u64)) {
-            Some(e) => Ok(e.get_data()),
-            None    => Ok(self.level_instances.get(&self.active_level)
-                              .unwrap()
-                              .get_entity_data(id as u64)),
-        }
-    }
-
-    pub fn active_entity_obj(&self) -> ExprRes {
-        if self.active_entity != 0 {
-            self.entity_obj(self.active_entity as i64)
-        } else {
-            Ok(msValue::Null) // or custom err?
-        }
-    }
-
-    pub fn run_actions(&mut self) -> ExprRes {
-        // run all entities actions
-        // all entities post-actions
-        Ok(msValue::Null)
-    }
-
-    // TODO: below should accept closure or callable as argument
-    /*pub fn run_actions_ordered(&mut self, comp: &msValue) -> ExprRes {
-        use modscript::Value::*;
-        let compare = |a,b| match *comp {
-            Func(ref p, ref n)      => {
-                self.source.call_fn(&p.borrow(), &n.borrow(), &vec![a,b])
-            },
-            Closure(ref f, ref a)   => {
-                f.borrow().call(&vec![a,b], &*self.source, Some(a.borrow()))
-            },
-            _ => return mserr(Type::RunTime(RunCode::TypeError)),
-        };
-
-        // sort all entities
-        // run actions
-        // run post-actions
-        Ok(msValue::Null)
-    }*/
-}
-
-// LEVEL MAP
-impl Global {
-    pub fn fill_tiles(&mut self, tile_name: &str, tl: Coord, br: Coord) -> ExprRes {
-        let level = self.level_instances.get_mut(&self.active_level).unwrap();
-        let tile = level.get_tile_id(tile_name).unwrap();
-        let y_start = cmp::min(tl.1, br.1);
-        let x_start = cmp::min(tl.0, br.0);
-        let y_range = ((tl.1 - br.1) as isize).abs() as usize;
-        let x_range = ((tl.0 - br.0) as isize).abs() as usize;
-
-        for y in y_start..(y_start + y_range) {
-            for x in x_start..(x_start + x_range) {
-                level.set_tile(tile, (x,y));
-            }
-        }
-        Ok(msValue::Null)
-    }
-
-    pub fn draw_line(&mut self, tile_name: &str, s: Coord, e: Coord) -> ExprRes {
-        let level = self.level_instances.get_mut(&self.active_level).unwrap();
-        let tile = level.get_tile_id(tile_name).unwrap();
-        let y_start = cmp::min(s.1, e.1);
-        let x_start = cmp::min(s.0, e.0);
-        let y_range = ((s.1 - e.1) as isize).abs() as usize;
-        let x_range = ((s.0 - e.0) as isize).abs() as usize;
-
-        // Bresenham's Algorithm:
-        // For x in x0->x1: y = (y1 - y0) / (x1 - x0) * (x - x0) + y0
-        let gradient = y_range / x_range;
-        let mut y = y_start;
-        for x in x_start..(x_start + x_range) {
-            let new_y = gradient * (x - x_start) + y_start;
-            if new_y != y {
-                level.set_tile(tile, (x,y));
-                y = new_y;
-            }
-            level.set_tile(tile, (x,y));
-        }
-        Ok(msValue::Null)
-    }
-
-    pub fn spawn_entity(&mut self, entity: i64, loc: Coord) -> ExprRes {
-        let level = self.level_instances.get_mut(&self.active_level).unwrap();
-        let spawned = level.spawn_instance(entity as u64, loc);
-        Ok(msValue::Val(VType::B(spawned)))
-    }
-
-    pub fn despawn_entity(&mut self, entity: i64) -> ExprRes {
-        let level = self.level_instances.get_mut(&self.active_level).unwrap();
-        let despawned = level.despawn_instance(entity as u64);
-        Ok(msValue::Val(VType::B(despawned)))
-    }
-}
 
 // TODO: move this somewhere better
 fn read_file(file_name: &str) -> String {
@@ -469,6 +311,7 @@ fn read_file(file_name: &str) -> String {
     contents
 }
 
+// TODO: rename this function and reconsider code snippets
 fn eval_snippet(imports: &[(String, String)], script: Option<&jsonValue>, libs: &FuncMap) -> Result<ScriptExpr, modscript::Error> {
     match script {
         Some(s) => {

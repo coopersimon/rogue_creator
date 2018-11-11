@@ -1,17 +1,17 @@
 use super::to_coord;
-use global::Global;
+use state::State;
 
 use modscript::{PackageRoot, ExprRes, Value, mserr, Type, RunCode};
 
 use std::rc::Rc;
 use std::cell::RefCell;
 
-type Glob = Rc<RefCell<Global>>;
+type S = Rc<RefCell<State>>;
 
 
 pub const NAME: &'static str = "makemap";
 
-pub fn call_ref(state: Glob) -> PackageRoot {
+pub fn call_ref(state: S) -> PackageRoot {
     Box::new(move |n, a, _| {
         match n {
             "fill_tile" => fill_tile(a, &state),
@@ -23,7 +23,7 @@ pub fn call_ref(state: Glob) -> PackageRoot {
     })
 }
 
-fn fill_tile(args: &[Value], state: &Glob) -> ExprRes {
+fn fill_tile(args: &[Value], state: &S) -> ExprRes {
     if args.len() != 2 && args.len() != 3 {
         return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
     }
@@ -43,7 +43,7 @@ fn fill_tile(args: &[Value], state: &Glob) -> ExprRes {
     state.borrow_mut().fill_tiles(&*tile_name, tl, br)
 }
 
-fn draw_line(args: &[Value], state: &Glob) -> ExprRes {
+fn draw_line(args: &[Value], state: &S) -> ExprRes {
     if args.len() != 3 {
         return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
     }
@@ -59,7 +59,7 @@ fn draw_line(args: &[Value], state: &Glob) -> ExprRes {
     state.borrow_mut().draw_line(&*tile_name, s, e)
 }
 
-fn spawn(args: &[Value], state: &Glob) -> ExprRes {
+fn spawn(args: &[Value], state: &S) -> ExprRes {
     use modscript::Value::*;
     use modscript::VType::*;
 
@@ -81,7 +81,7 @@ fn spawn(args: &[Value], state: &Glob) -> ExprRes {
     state.borrow_mut().spawn_entity(id, loc)
 }
 
-fn despawn(args: &[Value], state: &Glob) -> ExprRes {
+fn despawn(args: &[Value], state: &S) -> ExprRes {
     use modscript::Value::*;
     use modscript::VType::*;
 

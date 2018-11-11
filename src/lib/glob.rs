@@ -1,15 +1,15 @@
 use modscript::{PackageRoot, ExprRes, Value, mserr, Type, RunCode};
-use global::Global;
+use state::State;
 
 use std::rc::Rc;
 use std::cell::RefCell;
 
-type Glob = Rc<RefCell<Global>>;
+type S = Rc<RefCell<State>>;
 
 
 pub const NAME: &'static str = "glob";
 
-pub fn call_ref(state: Glob) -> PackageRoot {
+pub fn call_ref(state: S) -> PackageRoot {
     Box::new(move |n, a, _| {
         match n {
             "obj"           => obj(a, &state),
@@ -19,15 +19,15 @@ pub fn call_ref(state: Glob) -> PackageRoot {
     })
 }
 
-fn obj(a: &[Value], state: &Glob) -> ExprRes {
+fn obj(a: &[Value], state: &S) -> ExprRes {
     if a.len() != 0 {
         return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
     }
 
-    Ok(state.borrow().glob_obj.clone())
+    Ok(state.borrow().get_glob_obj())
 }
 
-fn set_layout(a: &[Value], state: &Glob) -> ExprRes {
+fn set_layout(a: &[Value], state: &S) -> ExprRes {
     use modscript::Value::*;
 
     if a.len() != 1 {
@@ -36,7 +36,7 @@ fn set_layout(a: &[Value], state: &Glob) -> ExprRes {
 
     match a[0] {
         Str(ref s) => {
-            state.borrow_mut().current_layout = s.borrow().clone();
+            state.borrow_mut().set_current_layout(&*s.borrow());
             Ok(Value::Null)
         },
         _ => mserr(Type::RunTime(RunCode::TypeError)),

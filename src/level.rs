@@ -15,12 +15,12 @@ pub struct Level {
     tile_info: Rc<TileInfo>,
     init: ScriptExpr,
     delete: ScriptExpr,
-    source: Rc<FuncMap>,
 }
 
 #[derive(Clone)]
 pub struct LevelInst {
-    level: Rc<Level>,
+    //level: Rc<Level>,
+    tile_info: Rc<TileInfo>,
     tile_map: Vec<Vec<TileID>>,
     local_instances: HashMap<u64, EntityInst>,
     instance_locs: HashMap<u64, Coord>,
@@ -34,7 +34,6 @@ impl Level {
         tile_info: Rc<TileInfo>,
         init: ScriptExpr,
         delete: ScriptExpr,
-        source: Rc<FuncMap>
         ) -> Self
     {
         Level {
@@ -43,34 +42,32 @@ impl Level {
             tile_info: tile_info,
             init: init,
             delete: delete,
-            source: source,
         }
     }
-}
 
-impl LevelInst {
-    pub fn new(level: Rc<Level>) -> Self {
+    pub fn new_instance(&self) -> LevelInst {
         LevelInst {
-            level: level.clone(),
-            tile_map: vec![vec![level.tile_info.get_default(); level.x]; level.y],
+            tile_info: self.tile_info.clone(),
+            tile_map: vec![vec![self.tile_info.get_default(); self.x]; self.y],
             local_instances: HashMap::new(),
             instance_locs: HashMap::new(),
             data: Value::Null,
         }
     }
 
-    pub fn init(&mut self) -> Result<(), Error> {
-        self.data = self.level.init.run(&self.level.source)?;
-        Ok(())
+    pub fn init(&self, source: &FuncMap) -> ExprRes {
+        self.init.run(source)
     }
 
-    pub fn delete(&self) -> ExprRes {
-        self.level.delete.run(&self.level.source)
+    pub fn delete(&self, source: &FuncMap) -> ExprRes {
+        self.delete.run(source)
     }
+}
 
+impl LevelInst {
     // TODO: Error handling here?
     pub fn get_tile_id(&self, tile_name: &str) -> Option<TileID> {
-        self.level.tile_info.get_id(tile_name)
+        self.tile_info.get_id(tile_name)
     }
 
     pub fn set_tile(&mut self, tile: TileID, loc: Coord) -> bool {
@@ -91,13 +88,8 @@ impl LevelInst {
         self.local_instances.insert(id, instance);
     }
 
-    pub fn remove_instance(&mut self, id: u64) -> Result<(), Error> {
-        match self.local_instances.get(&id) {
-            Some(i) => {i.delete()?;},
-            None    => (),
-        }
+    pub fn remove_instance(&mut self, id: u64) {
         self.local_instances.remove(&id);
-        Ok(())
     }
     /* trait InstanceStore */
 
@@ -107,7 +99,7 @@ impl LevelInst {
             false
         } else if x >= self.tile_map[0].len() {
             false
-        } else if self.level.tile_info.get_item(self.tile_map[y][x]).unwrap().collide {
+        } else if self.tile_info.get_item(self.tile_map[y][x]).unwrap().collide {
             false
         } else {
             self.instance_locs.insert(id, loc);
@@ -135,16 +127,28 @@ impl LevelInst {
         }
     }
 
+    pub fn set_data(&mut self, val: Value) {
+        self.data = val;
+    }
+
     pub fn get_data(&self) -> Value {
         self.data.clone()
+    }
+
+    pub fn set_entity_data(&mut self, id: u64, val: Value) {
+        self.local_instances.get_mut(&id).unwrap().set_data(val)
     }
 
     pub fn get_entity_data(&self, id: u64) -> Value {
         self.local_instances.get(&id).unwrap().get_data()
     }
 
+    pub fn get_entity_name(&self, id: u64) -> String {
+        self.local_instances.get(&id).unwrap().get_name()
+    }
+
     pub fn send_text_map_data(&self, sender: &Sender<MapCommand>, glob_instances: &HashMap<u64, EntityInst>) {
-        let tile_info = self.level.tile_info.clone();
+        let tile_info = self.tile_info.clone();
         sender.send(MapCommand::TileInfo(tile_info)).unwrap();
         sender.send(MapCommand::TileData(self.tile_map.clone())).unwrap();
         for (&k, &v) in self.instance_locs.iter() {

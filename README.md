@@ -5,16 +5,22 @@ Roguelike engine.
 Note that all of the below may not be 100% correct.
 
 ## Dev notes and TODOs:
-* Do control library (end game, wait)
+Short term
+* Clean up state funcs
+* Chain calls in library funcs
+
+Longer term:
 * Inputs, input mapping
-* Text object, colours, effects
+* Text object: colours, effects
 * Global database
 * Sub objects
 * More map display functions / reading map functions
-* Actions (and pre- and post- actions)
-* Delete calling
+* Actions (and and post- actions) - closure for ordering
 * More map drawing functions (fill area?)
-* Internal: split up the global object a bit.
+* Finish splitting global and state
+* tick function
+* Cleanup and finish rendering functions
+* Proper error handling in engine - returning errors, lots of critical errors, using custom error object
 
 ### Longer term:
 * Real time ticking option

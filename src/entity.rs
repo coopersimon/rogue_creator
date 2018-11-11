@@ -5,61 +5,71 @@ use textitem::TextItem;
 use std::rc::Rc;
 
 pub struct Entity {
-    name: String,   // TODO: way of getting this out
+    //name: String,   // TODO: way of getting this out
     init: ScriptExpr,
     action: ScriptExpr,
     post_action: ScriptExpr,
     delete: ScriptExpr,
     tile: TextItem,
-    source: Rc<FuncMap>,
 }
 
 #[derive(Clone)]
 pub struct EntityInst {
-    entity: Rc<Entity>,
+    name: String,
+    tile: TextItem,
     fields: Value, // Obj
 }
 
 impl Entity {
-    pub fn new(name: &str, tile: &str,
+    pub fn new(/*name: &str, */tile: &str,
         init: ScriptExpr,
         action: ScriptExpr,
         post_action: ScriptExpr,
         delete: ScriptExpr,
-        source: Rc<FuncMap>
         ) -> Self
     {
         Entity {
-            name: name.to_string(),
+            //name: name.to_string(),
             tile: TextItem::new_tile(tile.to_string()),
             init: init,
             action: action,
             post_action: post_action,
             delete: delete,
-            source: source,
         }
+    }
+
+    pub fn new_instance(&self, name: &str) -> EntityInst {
+        EntityInst {
+            name: name.to_string(),
+            tile: self.tile.clone(),
+            fields: Value::Null,
+        }
+    }
+
+    pub fn init(&self, source: &FuncMap) -> ExprRes {
+        self.init.run(source)
+    }
+
+    pub fn action(&self, source: &FuncMap) -> ExprRes {
+        self.action.run(source)
+    }
+
+    pub fn post_action(&self, source: &FuncMap) -> ExprRes {
+        self.post_action.run(source)
+    }
+
+    pub fn delete(&self, source: &FuncMap) -> ExprRes {
+        self.delete.run(source)
     }
 }
 
 impl EntityInst {
-    pub fn new(entity: Rc<Entity>) -> Result<Self, Error> {
-        let fields = entity.init.run(&entity.source)?;
-        Ok(EntityInst {
-            entity: entity.clone(),
-            fields: fields,
-        })
+    pub fn get_name(&self) -> String {
+        self.name.clone()
     }
 
-    pub fn action(&self) -> ExprRes {
-        self.entity.action.run(&self.entity.source)
-    }
-
-    pub fn post_action(&self) -> ExprRes {
-        self.entity.post_action.run(&self.entity.source)
-    }
-
-    pub fn delete(&self) -> ExprRes {
-        self.entity.delete.run(&self.entity.source)
+    pub fn set_data(&mut self, data: Value) {
+        self.fields = data;
     }
 
     pub fn get_data(&self) -> Value {
@@ -67,6 +77,6 @@ impl EntityInst {
     }
 
     pub fn get_tile(&self) -> TextItem {
-        self.entity.tile.clone()
+        self.tile.clone()
     }
 }

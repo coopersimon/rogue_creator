@@ -8,25 +8,23 @@ pub struct Layout {
     // inputs: HashMap<_input, Script[/Expr]
     inputs: HashMap<char, ScriptExpr>,
     render: ScriptExpr,
-    source: Rc<FuncMap>,
 }
 
 impl Layout {
-    pub fn new(inputs: HashMap<char, ScriptExpr>, render: ScriptExpr, source: Rc<FuncMap>) -> Self {
+    pub fn new(inputs: HashMap<char, ScriptExpr>, render: ScriptExpr) -> Self {
         Layout {
             inputs: inputs,
             render: render,
-            source: source,
         }
     }
 
-    pub fn render(&self) -> ExprRes {
-        self.render.run(&self.source)
+    pub fn render(&self, source: &FuncMap) -> ExprRes {
+        self.render.run(source)
     }
 
-    pub fn run_input(&self, input: char) -> ExprRes {
+    pub fn run_input(&self, input: char, source: &FuncMap) -> ExprRes {
         match self.inputs.get(&input) {
-            Some(c) => c.run(&self.source),
+            Some(c) => c.run(source),
             None => Ok(Value::Null),
         }
     }
