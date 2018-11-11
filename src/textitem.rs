@@ -1,4 +1,4 @@
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum TextColour {
     Default,
     Black,
@@ -31,7 +31,7 @@ impl TextColour {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum TextOption {
     Bold,
     Blinking,
@@ -48,7 +48,7 @@ impl TextOption {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TextItem {
     pub text: String,
     pub colour: TextColour,

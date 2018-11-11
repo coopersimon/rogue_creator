@@ -59,7 +59,8 @@ fn main() {
     let hub_file = "rogue/hub.json";
 
     glob.borrow_mut().init_game(hub_file).unwrap();
-    // state = glob.borrow_mut().init();
+    let glob_obj = glob.borrow().init().unwrap();
+    state.borrow_mut().set_glob_obj(glob_obj);
 
     // TODO: get from hub file
     let mut window = init_terminal("Rogue");
@@ -77,7 +78,7 @@ fn main() {
             None => (),
         }
         // check outputs
-        let mut iter = r_main.iter();
+        let mut iter = r_main.try_iter();
         while let Some(c) = iter.next() {
             match c {
                 MainCommand::EndGame => glob.borrow().end().unwrap(),

@@ -44,7 +44,7 @@ impl Map {
     fn process_commands(&mut self) {
         use self::MapCommand::*;
 
-        let mut iter = self.lib_recv.iter();
+        let mut iter = self.lib_recv.try_iter();
         while let Some(c) = iter.next() {
             match c {
                 Display(tl, br)         => {

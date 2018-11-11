@@ -67,8 +67,6 @@ impl Global {
 
         let root_dir = hub_file_name.split('/').next().unwrap().to_owned() + "/";
 
-        println!("root: {}", root_dir);
-
         let hub_file = read_file(hub_file_name);
         let hub_data: jsonValue = serde_json::from_str(&hub_file)?;
 

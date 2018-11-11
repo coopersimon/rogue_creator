@@ -1,9 +1,0 @@
-{
-    "w": "{player.action = ':scr/player.scr:move_up()'; tick();}",
-    "a": "{player.action = ':scr/player.scr:move_left()'; tick();}",
-    "s": "{player.action = ':scr/player.scr:move_down()'; tick();}",
-    "d": "{player.action = ':scr/player.scr:move_right()'; tick();}",
-    "i": "layout('inventory');",
-    "n": "next_print()",
-    "f": "{coord c = scr/main.scr:which_dir(); player.action = ':scr/player.scr:attack(c)'; tick();}"
-}

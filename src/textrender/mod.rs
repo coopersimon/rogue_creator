@@ -51,7 +51,7 @@ impl RenderData {
         use self::RenderCommand::*;
         w.clear();
 
-        let mut iter = self.lib_recv.iter();
+        let mut iter = self.lib_recv.try_iter();
         while let Some(c) = iter.next() {
             match c {
                 Renderable(mut r, tl, br)   => r.render(w, tl, br),
@@ -59,7 +59,7 @@ impl RenderData {
                 PrintBox(tl, br)            => self.printbox.render(w, tl, br),
             }
         }
-
+        
         w.refresh();
     }
 }

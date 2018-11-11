@@ -27,7 +27,7 @@ impl PrintBox {
     fn process_commands(&mut self) {
         use self::PrintCommand::*;
 
-        let mut iter = self.lib_recv.iter();
+        let mut iter = self.lib_recv.try_iter();
         while let Some(c) = iter.next() {
             match c {
                 NewText(v)              => self.display_text.push(v), // Todo: split and push
