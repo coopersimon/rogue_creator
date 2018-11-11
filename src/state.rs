@@ -20,10 +20,12 @@ pub struct State {
     id_count: u64,
     active_level: u64,
     active_entity: u64,
+
+    map_data_sender: Sender<MapCommand>,
 }
 
 impl State {
-    pub fn new() -> Self {
+    pub fn new(map_data_sender: Sender<MapCommand>) -> Self {
         State {
             glob_obj: Value::Null,
             current_layout: String::new(),
@@ -33,6 +35,8 @@ impl State {
             id_count: 0,
             active_level: 0,
             active_entity: 0,
+
+            map_data_sender: map_data_sender,
         }
     }
 
@@ -54,6 +58,10 @@ impl State {
 
     pub fn set_active_level(&mut self, id: u64) {
         self.active_level = id;
+        if id != 0 {
+            let level = self.level_instances.get(&self.active_level).expect(&format!("No active level {}", id));
+            self.map_data_sender.send(MapCommand::NewLevel(level.x_size(), level.y_size())).unwrap();
+        }
     }
 
     pub fn get_active_level(&self) -> u64 {
@@ -72,10 +80,10 @@ impl State {
         self.active_entity
     }
 
-    pub fn prepare_render(&self, sender: &Sender<MapCommand>) {
+    pub fn prepare_render(&self) {
         let level = self.level_instances.get(&self.active_level).expect("No active level");
 
-        level.send_text_map_data(sender, &self.glob_instances);
+        level.send_text_map_data(&self.map_data_sender, &self.glob_instances);
     }
 }
 
@@ -223,8 +231,8 @@ impl State {
         let tile = level.get_tile_id(tile_name).unwrap();
         let y_start = cmp::min(tl.1, br.1);
         let x_start = cmp::min(tl.0, br.0);
-        let y_range = ((tl.1 - br.1) as isize).abs() as usize;
-        let x_range = ((tl.0 - br.0) as isize).abs() as usize;
+        let y_range = (tl.1 as isize - br.1 as isize).abs() as usize;
+        let x_range = (tl.0 as isize - br.0 as isize).abs() as usize;
 
         for y in y_start..(y_start + y_range) {
             for x in x_start..(x_start + x_range) {
@@ -239,20 +247,19 @@ impl State {
         let tile = level.get_tile_id(tile_name).unwrap();
         let y_start = cmp::min(s.1, e.1);
         let x_start = cmp::min(s.0, e.0);
-        let y_range = ((s.1 - e.1) as isize).abs() as usize;
-        let x_range = ((s.0 - e.0) as isize).abs() as usize;
+        let y_range = (s.1 as isize - e.1 as isize).abs() as usize;
+        let x_range = (s.0 as isize - e.0 as isize).abs() as usize;
 
-        // Bresenham's Algorithm:
-        // For x in x0->x1: y = (y1 - y0) / (x1 - x0) * (x - x0) + y0
-        let gradient = y_range / x_range;
-        let mut y = y_start;
+        let gradient = y_range as f64 / x_range as f64;
+        let mut last_y = y_start;
         for x in x_start..(x_start + x_range) {
-            let new_y = gradient * (x - x_start) + y_start;
-            if new_y != y {
+            let new_y = (gradient * (x - x_start) as f64) as usize + y_start;
+            for y in last_y..new_y {
                 level.set_tile(tile, (x,y));
-                y = new_y;
             }
-            level.set_tile(tile, (x,y));
+
+            level.set_tile(tile, (x,new_y));
+            last_y = new_y;
         }
         Ok(Value::Null)
     }

@@ -21,12 +21,14 @@ use textrender::RenderData;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::mpsc::channel;
+use std::{thread, time};
 
 pub type Coord = (usize, usize);
 
 pub enum MainCommand {
     EndGame,
     Terminate,
+    Wait(u64),
 }
 
 fn main() {
@@ -38,10 +40,8 @@ fn main() {
     let (s_map,  r_map)  = channel();
     let (s_main, r_main) = channel();
 
-    let map_sender = s_map.clone();
-
     let glob = Rc::new(RefCell::new(global::Global::new()));
-    let state = Rc::new(RefCell::new(state::State::new()));
+    let state = Rc::new(RefCell::new(state::State::new(s_map.clone())));
 
     // init libraries
     glob.borrow_mut().source.attach_package(lib::math::NAME, lib::math::call_ref());
@@ -69,22 +69,32 @@ fn main() {
 
     // run
     loop {
-        state.borrow().prepare_render(&map_sender);
+        // render
+        state.borrow().prepare_render();
         glob.borrow().run_render(state.borrow().get_current_layout());
         renderer.render(&mut window);
+
+        // check outputs
+        let mut should_break = false;
+        let mut iter = r_main.try_iter();
+        while let Some(c) = iter.next() {
+            match c {
+                MainCommand::Wait(ms) => thread::sleep(time::Duration::from_millis(ms)),
+                MainCommand::EndGame => {glob.borrow().end().unwrap();},
+                MainCommand::Terminate => should_break = true,
+            };
+        }
+        if should_break {
+            break;
+        }
+
+        // input
         match window.getch() {
             Some(Input::Character(c)) => {glob.borrow().run_input(state.borrow().get_current_layout(), c).unwrap();},
             Some(_) => (), // TODO: special char support
             None => (),
         }
-        // check outputs
-        let mut iter = r_main.try_iter();
-        while let Some(c) = iter.next() {
-            match c {
-                MainCommand::EndGame => glob.borrow().end().unwrap(),
-                MainCommand::Terminate => break,
-            };
-        }
+
     }
 
     endwin();

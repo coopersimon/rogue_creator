@@ -18,13 +18,12 @@ pub fn call_ref(sender: Sender<MapCommand>) -> PackageRoot {
 }
 
 fn display(args: &[Value], sender: &Sender<MapCommand>) -> ExprRes {
-    if args.len() != 2 {
+    if args.len() != 1 {
         return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
     }
 
     let tl = to_coord(&args[0])?;
-    let br = to_coord(&args[1])?;
 
-    sender.send(MapCommand::Display(tl, br)).unwrap();
+    sender.send(MapCommand::Display(tl)).unwrap();
     Ok(Value::Null)
 }

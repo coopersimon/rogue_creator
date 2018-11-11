@@ -6,20 +6,21 @@ Note that all of the below may not be 100% correct.
 
 ## Dev notes and TODOs:
 Short term
+* Fix map display
 * Clean up state funcs
 * Chain calls in library funcs
 
 Longer term:
-* Inputs, input mapping
-* Text object: colours, effects
+* Input mapping
+* Text object: implement colours & effects
 * Global database
 * Sub objects
 * More map display functions / reading map functions
 * Actions (and and post- actions) - closure for ordering
 * More map drawing functions (fill area?)
-* Finish splitting global and state
-* tick function
+* Tick function
 * Cleanup and finish rendering functions
+* Cleanup of MainCommand enum
 * Proper error handling in engine - returning errors, lots of critical errors, using custom error object
 
 ### Longer term:
@@ -107,7 +108,7 @@ More (to do with colouring text, centering text etc) will be coming soon.
 * `clear()`: Clears entire print buffer and blanks.
 
 ##### Map: `map`
-* `display(coord, coord)`: Selects what to show with `place_map`. (defaults to the whole map from top left)
+* `display(coord)`: Selects what to show with `place_map`, specifying the top left coordinate (defaults to (0,0))
 * `show_all()`: reveals entire map for rendering.
 * `hide_all()`: hides entire map so it isn't rendered.
 * `show_tiles(coord)`: reveals all connected tiles of the same type from coord (if possible).

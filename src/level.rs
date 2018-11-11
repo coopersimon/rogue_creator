@@ -19,7 +19,6 @@ pub struct Level {
 
 #[derive(Clone)]
 pub struct LevelInst {
-    //level: Rc<Level>,
     tile_info: Rc<TileInfo>,
     tile_map: Vec<Vec<TileID>>,
     local_instances: HashMap<u64, EntityInst>,
@@ -135,8 +134,19 @@ impl LevelInst {
         self.data.clone()
     }
 
+    pub fn x_size(&self) -> usize {
+        match self.tile_map.len() {
+            0 => 0,
+            _ => self.tile_map[0].len()
+        }
+    }
+
+    pub fn y_size(&self) -> usize {
+        self.tile_map.len()
+    }
+
     pub fn set_entity_data(&mut self, id: u64, val: Value) {
-        self.local_instances.get_mut(&id).unwrap().set_data(val)
+        self.local_instances.get_mut(&id).unwrap().set_data(val);
     }
 
     pub fn get_entity_data(&self, id: u64) -> Value {

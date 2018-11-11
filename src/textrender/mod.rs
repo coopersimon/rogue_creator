@@ -59,7 +59,7 @@ impl RenderData {
                 PrintBox(tl, br)            => self.printbox.render(w, tl, br),
             }
         }
-        
+
         w.refresh();
     }
 }

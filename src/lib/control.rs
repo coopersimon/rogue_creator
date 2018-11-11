@@ -2,7 +2,6 @@ use MainCommand;
 
 use modscript::{PackageRoot, ExprRes, Value, VType, mserr, Type, RunCode};
 
-use std::{thread, time};
 use std::sync::mpsc::Sender;
 
 
@@ -13,7 +12,7 @@ pub fn call_ref(sender: Sender<MainCommand>) -> PackageRoot {
         match n {
             "end_game"          => end_game(a, &sender),
             "terminate_game"    => terminate_game(a, &sender),
-            "wait"              => wait(a),
+            "wait"              => wait(a, &sender),
             _ => mserr(Type::RunTime(RunCode::FunctionNotFound)),
         }
     })
@@ -37,7 +36,7 @@ fn terminate_game(args: &[Value], sender: &Sender<MainCommand>) -> ExprRes {
     Ok(Value::Null)
 }
 
-fn wait(args: &[Value]) -> ExprRes {
+fn wait(args: &[Value], sender: &Sender<MainCommand>) -> ExprRes {
     use self::Value::*;
     use self::VType::*;
 
@@ -54,7 +53,6 @@ fn wait(args: &[Value]) -> ExprRes {
         _           => return mserr(Type::RunTime(RunCode::TypeError)),
     };
 
-    thread::sleep(time::Duration::from_millis(wait_time));
-
+    sender.send(MainCommand::Wait(wait_time)).unwrap();
     Ok(Value::Null)
 }
