@@ -86,6 +86,8 @@ There are a number of engine functions which can be called. They exist in differ
 #### Engine functions
 Each of the following functions are found inside the package noted. They must be imported before use.
 
+`coord` below can be represented by a few types. `[x,y]` in a list, or `{x: int, y: int}` as an object.
+
 ##### Entity manipulation: `entity`
 * `create_global(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the global instance list.
 * `create(string)`: Creates new instance of entity. Runs its `init` script. Returns id. Adds ID to the level's instance list.
@@ -111,8 +113,6 @@ More (to do with colouring text, centering text etc) will be coming soon.
 * `display(coord)`: Selects what to show with `place_map`, specifying the top left coordinate (defaults to (0,0))
 * `show_all()`: reveals entire map for rendering.
 * `hide_all()`: hides entire map so it isn't rendered.
-* `show_tiles(coord)`: reveals all connected tiles of the same type from coord (if possible).
-* `hide_tiles(coord)`: hides all connected tiles of the same type from coord (if possible).
 * `show_surround(coord)`: reveals the tiles around and including coord.
 * `hide_surround(coord)`: hides the tiles around and including coord.
 
@@ -131,6 +131,7 @@ More (to do with colouring text, centering text etc) will be coming soon.
 * `draw_line(string, coord, coord)`: Draws a line between the coords.
 * `spawn(integer, coord)`: Spawns instance at coords specified. If not possible, then returns false. If successful, returns true.
 * `despawn(integer)`: Despawns instance, however keeps data so it can be re-spawned.
+* `move_entity(integer, coord)`: Moves an entity from its existing position to a new position specified.
 * `set_entity_display(integer, text)`: Sets visuals for entity to the text object specified. Text contained must be a single character.
 
 ##### Flow control: `control`

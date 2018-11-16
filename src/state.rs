@@ -250,17 +250,24 @@ impl State {
         let y_range = (s.1 as isize - e.1 as isize).abs() as usize;
         let x_range = (s.0 as isize - e.0 as isize).abs() as usize;
 
-        let gradient = y_range as f64 / x_range as f64;
-        let mut last_y = y_start;
-        for x in x_start..(x_start + x_range) {
-            let new_y = (gradient * (x - x_start) as f64) as usize + y_start;
-            for y in last_y..new_y {
-                level.set_tile(tile, (x,y));
-            }
+        if x_range != 0 {
+            let gradient = y_range as f64 / x_range as f64;
+            let mut last_y = y_start;
+            for x in x_start..=(x_start + x_range) {
+                let new_y = (gradient * (x - x_start) as f64) as usize + y_start;
+                for y in last_y..=new_y {
+                    level.set_tile(tile, (x,y));
+                }
 
-            level.set_tile(tile, (x,new_y));
-            last_y = new_y;
+                //level.set_tile(tile, (x,new_y));
+                last_y = new_y;
+            }
+        } else {
+            for y in y_start..=(y_start + y_range) {
+                level.set_tile(tile, (x_start,y));
+            }
         }
+
         Ok(Value::Null)
     }
 

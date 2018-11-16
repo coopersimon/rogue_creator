@@ -1,5 +1,5 @@
 use modscript::{PackageRoot, ExprRes, Value, mserr, Type, RunCode};
-use rand::random;
+use rand::{thread_rng, Rng};
 
 
 pub const NAME: &'static str = "math";
@@ -88,7 +88,7 @@ fn rand(a: &[Value]) -> ExprRes {
     }
 
     match (&a[0], &a[1]) {
-        (Val(I(i)), Val(I(j))) => Ok(Val(I((random::<i64>() % j) + i))),
+        (Val(I(i)), Val(I(j))) => Ok(Val(I(thread_rng().gen_range(*i,*j)))),
         _ => mserr(Type::RunTime(RunCode::TypeError)),
     }
 }
