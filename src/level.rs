@@ -110,6 +110,23 @@ impl LevelInst {
         self.instance_locs.remove(&id).is_some()
     }
 
+    pub fn move_instance(&mut self, id: u64, loc: Coord) -> bool {
+        // check entry exists -> return error?
+
+        let (x,y) = loc;
+        if y >= self.tile_map.len() {
+            false
+        } else if x >= self.tile_map[0].len() {
+            false
+        } else if self.tile_info.get_item(self.tile_map[y][x]).unwrap().collide {
+            false
+        } else {
+            self.instance_locs.remove(&id);
+            self.instance_locs.insert(id, loc);
+            true
+        }
+    }
+
     pub fn instance_at(&self, loc: Coord) -> Option<u64> {
         for (&k, &v) in self.instance_locs.iter() {
             if v == loc {

@@ -14,10 +14,11 @@ pub const NAME: &'static str = "makemap";
 pub fn call_ref(state: S) -> PackageRoot {
     Box::new(move |n, a, _| {
         match n {
-            "fill_tile" => fill_tile(a, &state),
-            "draw_line" => draw_line(a, &state),
-            "spawn"     => spawn(a, &state),
-            "despawn"   => despawn(a, &state),
+            "fill_tile"     => fill_tile(a, &state),
+            "draw_line"     => draw_line(a, &state),
+            "spawn"         => spawn(a, &state),
+            "despawn"       => despawn(a, &state),
+            "move_entity"   => move_entity(a, &state),
             _ => mserr(Type::RunTime(RunCode::FunctionNotFound)),
         }
     })
@@ -99,4 +100,26 @@ fn despawn(args: &[Value], state: &S) -> ExprRes {
     };
 
     state.borrow_mut().despawn_entity(id)
+}
+
+fn move_entity(args: &[Value], state: &S) -> ExprRes {
+    use modscript::Value::*;
+    use modscript::VType::*;
+
+    if args.len() != 2 {
+        return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
+    }
+
+    let id = match args[0] {
+        Val(I(i))   => i,
+        Ref(ref r)  => match *r.borrow() {
+            I(i)    => i,
+            _ => return mserr(Type::RunTime(RunCode::TypeError)),
+        }
+        _ => return mserr(Type::RunTime(RunCode::TypeError)),
+    };
+
+    let loc = to_coord(&args[1])?;
+
+    state.borrow_mut().move_entity(id, loc)
 }

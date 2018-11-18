@@ -9,6 +9,8 @@ use super::textrender::MapCommand;
 use std::collections::HashMap;
 use std::cmp;
 use std::sync::mpsc::Sender;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 // Runtime data for game
 pub struct State {
@@ -20,6 +22,7 @@ pub struct State {
     id_count: u64,
     active_level: u64,
     active_entity: u64,
+    last_key: String,
 
     map_data_sender: Sender<MapCommand>,
 }
@@ -35,6 +38,7 @@ impl State {
             id_count: 0,
             active_level: 0,
             active_entity: 0,
+            last_key: String::new(),
 
             map_data_sender: map_data_sender,
         }
@@ -52,8 +56,8 @@ impl State {
         self.current_layout = c_l.to_string()
     }
 
-    pub fn get_current_layout<'a>(&'a self) -> &'a str {
-        &self.current_layout
+    pub fn get_current_layout(&self) -> String {
+        self.current_layout.clone()
     }
 
     pub fn set_active_level(&mut self, id: u64) {
@@ -80,10 +84,19 @@ impl State {
         self.active_entity
     }
 
-    pub fn prepare_render(&self) {
-        let level = self.level_instances.get(&self.active_level).expect("No active level");
+    pub fn set_last_key(&mut self, k: &str) {
+        self.last_key = k.to_string();
+    }
 
-        level.send_text_map_data(&self.map_data_sender, &self.glob_instances);
+    pub fn get_last_key(&self) -> String {
+        self.last_key.clone()
+    }
+
+    pub fn prepare_render(&self) {
+        match self.level_instances.get(&self.active_level) {
+            Some(level) => level.send_text_map_data(&self.map_data_sender, &self.glob_instances),
+            None => (),
+        }
     }
 }
 
@@ -126,9 +139,11 @@ impl State {
 
     pub fn location_of(&self, id: i64) -> ExprRes {
         Ok(match self.level_instances.get(&self.active_level).unwrap().location_of(id as u64) {
-            Some(_l) => {
-                // TODO: create object
-                Value::Null
+            Some((x,y)) => {
+                let v = Rc::new(RefCell::new(Vec::new()));
+                v.borrow_mut().push(Value::Val(VType::I(x as i64)));
+                v.borrow_mut().push(Value::Val(VType::I(y as i64)));
+                Value::List(v)
             },
             None    => Value::Null,
         })
@@ -234,8 +249,8 @@ impl State {
         let y_range = (tl.1 as isize - br.1 as isize).abs() as usize;
         let x_range = (tl.0 as isize - br.0 as isize).abs() as usize;
 
-        for y in y_start..(y_start + y_range) {
-            for x in x_start..(x_start + x_range) {
+        for y in y_start..=(y_start + y_range) {
+            for x in x_start..=(x_start + x_range) {
                 level.set_tile(tile, (x,y));
             }
         }
@@ -281,5 +296,11 @@ impl State {
         let level = self.level_instances.get_mut(&self.active_level).unwrap();
         let despawned = level.despawn_instance(entity as u64);
         Ok(Value::Val(VType::B(despawned)))
+    }
+
+    pub fn move_entity(&mut self, entity: i64, loc: Coord) -> ExprRes {
+        let level = self.level_instances.get_mut(&self.active_level).unwrap();
+        let moved = level.move_instance(entity as u64, loc);
+        Ok(Value::Val(VType::B(moved)))
     }
 }

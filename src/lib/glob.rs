@@ -14,31 +14,42 @@ pub fn call_ref(state: S) -> PackageRoot {
         match n {
             "obj"           => obj(a, &state),
             "set_layout"    => set_layout(a, &state),
+            "last_key"      => last_key(a, &state),
             _ => mserr(Type::RunTime(RunCode::FunctionNotFound)),
         }
     })
 }
 
-fn obj(a: &[Value], state: &S) -> ExprRes {
-    if a.len() != 0 {
+fn obj(args: &[Value], state: &S) -> ExprRes {
+    if args.len() != 0 {
         return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
     }
 
     Ok(state.borrow().get_glob_obj())
 }
 
-fn set_layout(a: &[Value], state: &S) -> ExprRes {
+fn set_layout(args: &[Value], state: &S) -> ExprRes {
     use modscript::Value::*;
 
-    if a.len() != 1 {
+    if args.len() != 1 {
         return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
     }
 
-    match a[0] {
+    match args[0] {
         Str(ref s) => {
             state.borrow_mut().set_current_layout(&*s.borrow());
             Ok(Value::Null)
         },
         _ => mserr(Type::RunTime(RunCode::TypeError)),
     }
+}
+
+fn last_key(args: &[Value], state: &S) -> ExprRes {
+    use modscript::Value::*;
+
+    if args.len() != 0 {
+        return mserr(Type::RunTime(RunCode::WrongNumberOfArguments));
+    }
+
+    Ok(Value::Str(Rc::new(RefCell::new(state.borrow().get_last_key()))))
 }

@@ -4,6 +4,7 @@ use modscript::Value as msValue;
 use serde_json;
 use serde_json::Value as jsonValue;
 use modscript::{ScriptExpr, FuncMap, expr_from_text, ExprRes, VType, mserr};
+use pancurses::Input;
 
 use super::entity::{Entity, EntityInst};
 use super::level::{Level, LevelInst};
@@ -171,12 +172,13 @@ impl Global {
             };
 
             for (ref name, ref layout) in layout_data["layouts"].as_object().unwrap().iter() {
+                let mut default = None;
                 let inputs = match layout.get("inputs") {
                     Some(i) => {
                         let mut m = HashMap::new();
                         for (ref k, ref v) in i.as_object().unwrap().iter() {
-                            let ch = k.to_string().chars().next();
-                            m.insert(ch.unwrap(), eval_snippet(&packs, Some(v), &self.source).unwrap());
+                            let key = match_key(&k.as_str());
+                            m.insert(key, eval_snippet(&packs, Some(v), &self.source).unwrap());
                         }
                         m
                     },
@@ -185,6 +187,7 @@ impl Global {
 
                 self.layouts.insert(name.to_string(), Layout::new(
                     inputs,
+                    default,
                     eval_snippet(&packs, layout.get("render"), &self.source).unwrap()
                 ));
             }
@@ -216,11 +219,11 @@ impl Global {
         Ok(())
     }
 
-    pub fn run_input(&self, current_layout: &str, key: char) -> ExprRes {
+    // Better deal with different inputs
+    pub fn run_input(&self, current_layout: &str, key: &Input) -> ExprRes {
         self.layouts.get(current_layout).expect("Unrecognised layout.").run_input(key, &self.source)
     }
 
-    // run render
     pub fn run_render(&self, current_layout: &str) -> ExprRes {
         self.layouts.get(current_layout).expect("Unrecognised layout.").render(&self.source)
     }
@@ -319,4 +322,22 @@ fn eval_snippet(imports: &[(String, String)], script: Option<&jsonValue>, libs: 
         },
         None => Ok(ScriptExpr::new(None)),
     }
+}
+
+fn match_key(in: &str) -> Input {
+    match k {
+        "default"   => {
+            default = Some(eval_snippet(&packs, Some(v), &self.source).unwrap());
+            continue;
+        },
+        "enter"     => Input::Character('\n'),
+        "space"     => Input::Character(' '),
+        "backspace" => Input::KeyBackspace,
+        "tab"       => Input::Character('\t'),
+        "left"      => Input::KeyLeft,
+        "right"     => Input::KeyRight,
+        "up"        => Input::KeyUp,
+        "down"      => Input::KeyDown,
+        ch          => Input::Character(ch.to_string().chars().next().unwrap()),
+    };
 }

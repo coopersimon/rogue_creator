@@ -16,7 +16,6 @@ pub enum MapCommand {
     // Package commands
     Display(Coord),
     SetShowArea(Coord, Coord, bool),
-    //ToggleDisplayArea(Coord, Coord),
 
     // Map data
     TileInfo(Rc<TileInfo>),
@@ -48,6 +47,8 @@ impl Map {
     fn process_commands(&mut self) {
         use self::MapCommand::*;
 
+        self.instance_data.clear();
+
         let mut iter = self.lib_recv.try_iter();
         while let Some(c) = iter.next() {
             match c {
@@ -64,13 +65,6 @@ impl Map {
                         }
                     }
                 },
-                /*ToggleDisplayArea(tl, br) => {
-                    for row in &mut self.display_area[tl.1..br.1] {
-                        for c in &mut row[tl.0..br.0] {
-                            *c = !(*c);
-                        }
-                    }
-                },*/
                 TileInfo(ti)    => self.tile_info = ti,
                 TileData(td)    => self.tile_data = td,
                 Sprite(c, ti)   => self.instance_data.push((c, ti)),
@@ -96,12 +90,12 @@ impl Render for Map {
         let x_bound = (bottom_right.0 - top_left.0) + self.display_top_left.0;
 
         for y in self.display_top_left.1..y_bound {
-            if y > self.tile_data.len() {
+            if y >= self.tile_data.len() {
                 break;
             }
 
             for x in self.display_top_left.0..x_bound {
-                if x > self.tile_data[y].len() {
+                if x >= self.tile_data[y].len() {
                     break;
                 }
 

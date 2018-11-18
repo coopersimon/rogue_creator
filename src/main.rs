@@ -71,7 +71,7 @@ fn main() {
     loop {
         // render
         state.borrow().prepare_render();
-        glob.borrow().run_render(state.borrow().get_current_layout());
+        glob.borrow().run_render(&state.borrow().get_current_layout());
         renderer.render(&mut window);
 
         // check outputs
@@ -89,9 +89,15 @@ fn main() {
         }
 
         // input
+
         match window.getch() {
-            Some(Input::Character(c)) => {glob.borrow().run_input(state.borrow().get_current_layout(), c).unwrap();},
-            Some(_) => (), // TODO: special char support
+            Some(i) => {
+                if let Input::Character(c) = i {
+                    state.borrow_mut().set_last_key(&c.to_string());
+                }
+                let current_layout = state.borrow().get_current_layout();
+                glob.borrow().run_input(&current_layout, &i).unwrap();
+            },
             None => (),
         }
 

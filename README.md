@@ -6,7 +6,6 @@ Note that all of the below may not be 100% correct.
 
 ## Dev notes and TODOs:
 Short term
-* Fix map display
 * Clean up state funcs
 * Chain calls in library funcs
 
@@ -46,6 +45,14 @@ The cycle:
 
 ### Making Level:
 TODO: Write about levels
+
+### Layouts:
+Layouts define a `render` function and feature `inputs`, which map to script expressions. Inputs can be single characters or special keys, listed below. A "default" can also be defined, which matches any other key input.
+* enter
+* backspace
+* space
+* tab
+* arrow keys: left, up, right, down
 
 
 ## Scripts
@@ -145,6 +152,7 @@ More (to do with colouring text, centering text etc) will be coming soon.
 * `obj()`: gets a mutable reference to the global object.
 * `data()`: gets a reference to the global database.
 * `set_layout(text)`: Changes active layout to "text", as defined in json. This MUST be called before the end of the `init` script.
+* `last_key()`: Gets the last key pressed as text.
 
 ##### Mathematical: `math`
 * `sin(n)`: Runs sin function on number.
