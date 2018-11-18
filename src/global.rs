@@ -177,7 +177,21 @@ impl Global {
                     Some(i) => {
                         let mut m = HashMap::new();
                         for (ref k, ref v) in i.as_object().unwrap().iter() {
-                            let key = match_key(&k.as_str());
+                            let key = match k.as_str() {
+                                "default"   => {
+                                    default = Some(eval_snippet(&packs, Some(v), &self.source).unwrap());
+                                    continue;
+                                },
+                                "enter"     => Input::Character('\n'),
+                                "space"     => Input::Character(' '),
+                                "backspace" => Input::KeyBackspace,
+                                "tab"       => Input::Character('\t'),
+                                "left"      => Input::KeyLeft,
+                                "right"     => Input::KeyRight,
+                                "up"        => Input::KeyUp,
+                                "down"      => Input::KeyDown,
+                                ch          => Input::Character(ch.to_string().chars().next().unwrap()),
+                            };
                             m.insert(key, eval_snippet(&packs, Some(v), &self.source).unwrap());
                         }
                         m
@@ -322,22 +336,4 @@ fn eval_snippet(imports: &[(String, String)], script: Option<&jsonValue>, libs: 
         },
         None => Ok(ScriptExpr::new(None)),
     }
-}
-
-fn match_key(in: &str) -> Input {
-    match k {
-        "default"   => {
-            default = Some(eval_snippet(&packs, Some(v), &self.source).unwrap());
-            continue;
-        },
-        "enter"     => Input::Character('\n'),
-        "space"     => Input::Character(' '),
-        "backspace" => Input::KeyBackspace,
-        "tab"       => Input::Character('\t'),
-        "left"      => Input::KeyLeft,
-        "right"     => Input::KeyRight,
-        "up"        => Input::KeyUp,
-        "down"      => Input::KeyDown,
-        ch          => Input::Character(ch.to_string().chars().next().unwrap()),
-    };
 }
