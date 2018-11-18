@@ -22,6 +22,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::mpsc::channel;
 use std::{thread, time};
+use std::env;
 
 pub type Coord = (usize, usize);
 
@@ -55,10 +56,9 @@ fn main() {
     glob.borrow_mut().source.attach_package(lib::control::NAME, lib::control::call_ref(s_main));
 
 
-    // TODO: get from arg
-    let hub_file = "rogue/hub.json";
+    let hub_file = env::args().nth(1).expect("Hub file should be first argument.");
 
-    glob.borrow_mut().init_game(hub_file).unwrap();
+    glob.borrow_mut().init_game(&hub_file).unwrap();
     let glob_obj = glob.borrow().init().unwrap();
     state.borrow_mut().set_glob_obj(glob_obj);
 
