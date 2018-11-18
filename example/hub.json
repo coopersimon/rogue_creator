@@ -1,0 +1,34 @@
+{
+    "version": "0.1",
+    "name": "rogue",
+
+    "source": [
+        "scripts/main.scr",
+        "scripts/player.scr",
+        "scripts/layouts.scr",
+        "scripts/levels.scr",
+        "scripts/utils.scr"
+    ],
+
+    "imports": {
+        "scripts/main.scr": "main"
+    },
+
+    "init": "main::init()",
+
+    "tick": "main::tick()",
+
+    "end": "main::end()",
+
+    "entities": [
+        "data/player.json"
+    ],
+
+    "levels": [
+        "data/levels.json"
+    ],
+
+    "layouts": [
+        "data/layouts.json"
+    ]
+}

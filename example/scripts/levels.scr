@@ -1,0 +1,112 @@
+import math;
+import makemap as mk;
+import entity as ent;
+import glob;
+
+func make_level(n) {
+
+  var g_obj = glob::obj();
+
+  // Generate Rooms
+  var rooms = [];
+  var rooms_missing = 3;
+  for y in [0..3] {
+    for x in [0..3] {
+      // 2/3 chance of making room: max 3 rooms missing
+      if (rooms_missing == 0) | (math::rand(0,3) != 0) {
+        rooms->append(random_room(x*24, y*16));
+      } else {
+        rooms_missing -= 1;
+        rooms->append(null);
+      }
+    }
+  }
+
+  // Generate Paths
+  for r in [0..9] {
+    var mod = r % 3;
+    var div = r / 3;
+
+    // connect left-right
+    if mod != 2 {
+      connect_hor_rooms(rooms[r], rooms[r+1], div * 16);
+    }
+
+    // connect top-bottom
+    if div != 2 {
+      connect_ver_rooms(rooms[r], rooms[r+3], mod * 24);
+    }
+  }
+
+  // connect disconnected rooms (if all surroundings are null)
+
+  // Spawn player
+  while !mk::spawn(g_obj.player, [math::rand(0, 72), math::rand(0, 48)]) {}
+
+  // Spawn stairs in different room
+
+  // Spawn monsters based on floor num
+  // Spawn items based on floor num
+
+  return {
+    level_no: n,
+    rooms: rooms
+  };
+}
+
+func random_room(x_base, y_base) {
+
+  var left = math::rand(1, 8) + x_base;
+  var right = math::rand(13, 22) + x_base;
+  var top = math::rand(1, 6) + y_base;
+  var bottom = math::rand(10, 14) + y_base;
+
+  mk::fill_tile("floor", [left,top], [right,bottom]);
+  mk::draw_line("wall", [left,top], [right,top]);
+  mk::draw_line("wall", [right,top], [right,bottom]);
+  mk::draw_line("wall", [right,bottom], [left,bottom]);
+  mk::draw_line("wall", [left,bottom], [left,top]);
+
+  return [[left, top], [right, bottom]];
+}
+
+func connect_hor_rooms(left, right, offset) {
+  if (left == null) | (right == null) {
+    return;
+  }
+
+  var y = math::rand(6, 10) + offset;
+  var l_x = left[1][0];
+  var r_x = right[0][0];
+
+  mk::fill_tile("door", [l_x, y]);
+  mk::fill_tile("door", [r_x, y]);
+  mk::draw_line("path", [l_x + 1, y], [r_x - 1, y]);
+}
+
+func connect_ver_rooms(top, bottom, offset) {
+  if (top == null) | (bottom == null) {
+    return;
+  }
+
+  var x = math::rand(8, 13) + offset;
+  var t_y = top[1][1];
+  var b_y = bottom[0][1];
+
+  mk::fill_tile("door", [x, t_y]);
+  mk::fill_tile("door", [x, b_y]);
+  mk::draw_line("path", [x, t_y + 1], [x, b_y - 1]);
+}
+
+func switch_level(x) {
+
+}
+
+/*
+"topwall": "\u23AF",
+"sidewall": "\u23B8",
+"topleftwall": "\u23BE",
+"botleftwall": "\u23BF",
+"toprightwall": "\u23CB",
+"botrightwall": "\u23CC"
+*/

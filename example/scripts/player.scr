@@ -1,0 +1,18 @@
+func init() {
+  return {
+    name: "",
+    hp: 20,
+    maxhp: 20,
+    att: 10,
+    def: 10,
+    inv: {[]}
+  };
+}
+
+func action() {
+
+}
+
+func delete() {
+
+}

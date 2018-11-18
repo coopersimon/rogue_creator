@@ -1,0 +1,14 @@
+{
+  "imports": {
+    "scripts/player.scr": "p"
+  },
+
+  "entities": {
+    "player": {
+      "init": "p::init()",
+      "action": "p::action()",
+      "delete": "p::delete()",
+      "tile": "@"
+    }
+  }
+}

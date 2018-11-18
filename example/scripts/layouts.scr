@@ -1,0 +1,93 @@
+import pbox;
+import control;
+import txtrend as r;
+import glob as g;
+import entity as e;
+import level as l;
+
+func render_startup(named) {
+  var player = e::data(g::obj().player);
+
+  r::place_text("Welcome to rogue.", [2,0], [72,0]);
+  r::place_text("What is your name?", [2,1], [72,1]);
+
+  r::place_text(player.name, [2,2], [72,2]);
+
+  if !named {
+    return;
+  }
+
+  r::place_text("Choose a class to begin the game!", [2,4], [72,4]);
+  r::place_text("k: Knight", [2,5], [72,5]);
+  r::place_text("w: Wizard", [2,6], [72,6]);
+  r::place_text("r: Rogue", [2,7], [72,7]);
+}
+
+func add_name() {
+  var player = e::data(g::obj().player);
+
+  player.name += g::last_key();
+}
+
+func confirm_name() {
+  g::set_layout("startup_b");
+}
+
+func choose_class(class) {
+  match class {
+    0: pbox::print("Knight");
+    1: pbox::print("Wizard");
+    2: pbox::print("Rogue");
+  }
+
+  var level_id = l::create("level_1");
+  l::load(level_id);
+
+  g::set_layout("standard");
+}
+
+
+func render_level() {
+  r::place_print([0,0], [72,0]);
+  r::place_map([0,1], [72,49]);
+
+  var player = e::data(g::obj().player);
+  var level = l::data();
+  var t = "";
+
+  t += player.name;
+  t += " ";
+  t += player.hp + "/" + player.maxhp;
+  t += " ";
+  t += "Level: " + level.level_no;
+
+  r::place_text(t, [0,50], [72,50]);
+}
+
+func move_player(x) {
+  import makemap as mk;
+
+  var player = g::obj().player;
+  var coords = l::location_of(player);
+
+  match x {
+    0: mk::move_entity(player, [coords[0], coords[1] - 1]);
+    1: mk::move_entity(player, [coords[0] - 1, coords[1]]);
+    2: mk::move_entity(player, [coords[0], coords[1] + 1]);
+    3: mk::move_entity(player, [coords[0] + 1, coords[1]]);
+  }
+
+  // reveal map
+}
+
+func next_print() {
+  pbox::next();
+}
+
+func end() {
+  pbox::clear();
+  pbox::print("Ending...");
+
+  control::wait(5000);
+  control::end_game();
+}

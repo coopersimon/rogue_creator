@@ -1,0 +1,23 @@
+import glob as g;
+import level as l;
+import entity as e;
+
+func init() {
+  g::set_layout("startup_a");
+
+  var player_id = e::create_global("player");
+
+  return {
+    player: player_id
+  };
+}
+
+func tick() {
+
+}
+
+func end() {
+  import control;
+
+  control::terminate_game();
+}

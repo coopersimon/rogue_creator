@@ -1,0 +1,36 @@
+{
+  "imports": {
+    "scripts/layouts.scr": "l"
+  },
+
+  "layouts": {
+    "startup_a": {
+      "render": "l::render_startup(false)",
+      "inputs": {
+        "enter": "l::confirm_name()",
+        "default": "l::add_name()"
+      }
+    },
+
+    "startup_b": {
+      "render": "l::render_startup(true)",
+      "inputs": {
+        "k": "l::choose_class(0)",
+        "w": "l::choose_class(1)",
+        "r": "l::choose_class(2)"
+      }
+    },
+
+    "standard": {
+      "render": "l::render_level()",
+      "inputs": {
+        "w": "l::move_player(0)",
+        "a": "l::move_player(1)",
+        "s": "l::move_player(2)",
+        "d": "l::move_player(3)",
+        "n": "l::next_print()",
+        "x": "l::end()"
+      }
+    }
+  }
+}

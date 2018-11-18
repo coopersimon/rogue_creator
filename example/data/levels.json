@@ -1,0 +1,27 @@
+{
+  "imports": {
+    "scripts/levels.scr": "l"
+  },
+
+  "tiles": {
+    "collide": {
+      "blank": " ",
+      "wall": "$"
+    },
+    "nocollide": {
+      "floor": ".",
+      "path": "#",
+      "door": "+"
+    },
+    "default": "blank"
+  },
+
+  "levels": {
+    "level_1": {
+      "x": 72,
+      "y": 48,
+      "init": "l::make_level(1)",
+      "delete": "l::switch_level(2)"
+    }
+  }
+}
